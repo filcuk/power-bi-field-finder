@@ -1,0 +1,118 @@
+{
+  "version": "1.1.0",
+  "diagrams": [
+    {
+      "ordinal": 0,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 0,
+            "y": 0
+          },
+          "nodeIndex": " Measures",
+          "size": {
+            "height": 288,
+            "width": 237
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 867.21299386699252,
+            "y": 396.76992020500279
+          },
+          "nodeIndex": "Page Filters",
+          "size": {
+            "height": 245,
+            "width": 236
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 277,
+            "y": 1.9083215729105518
+          },
+          "nodeIndex": "Page Visual Types",
+          "size": {
+            "height": 199,
+            "width": 252
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 267.79460030582629,
+            "y": 339.99249979915061
+          },
+          "nodeIndex": "Page Visuals",
+          "size": {
+            "height": 515,
+            "width": 258
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 570.21299386699252,
+            "y": 547.83997786089094
+          },
+          "nodeIndex": "Page Visuals Data Elements",
+          "size": {
+            "height": 242,
+            "width": 257
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 569,
+            "y": 0
+          },
+          "nodeIndex": "Pages",
+          "size": {
+            "height": 297,
+            "width": 247
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 1143.2129938669923,
+            "y": 399.93535857587079
+          },
+          "nodeIndex": "Report Filters",
+          "size": {
+            "height": 237,
+            "width": 242
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 878.66445748933415,
+            "y": 63.314348968883408
+          },
+          "nodeIndex": "Tables and Fields",
+          "size": {
+            "height": 173,
+            "width": 242
+          },
+          "zIndex": 0
+        }
+      ],
+      "name": "All tables",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    }
+  ],
+  "selectedDiagram": "All tables",
+  "defaultDiagram": "All tables"
+}

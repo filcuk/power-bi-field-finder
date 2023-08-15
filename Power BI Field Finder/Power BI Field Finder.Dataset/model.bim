@@ -1,0 +1,2313 @@
+{
+  "compatibilityLevel": 1567,
+  "model": {
+    "annotations": [
+      {
+        "name": "PBIDesktopVersion",
+        "value": "2.119.986.0 (23.07)"
+      },
+      {
+        "name": "__PBI_TimeIntelligenceEnabled",
+        "value": "1"
+      },
+      {
+        "name": "PBI_QueryOrder",
+        "value": "[\"OpenZipFile\",\"Report Layout\",\"Pages\",\"Page Config\",\"Page Visuals\",\"Page Visuals Data Elements\",\"Page Visual Types\",\"Page Visual type colors\",\"Report Filters\",\"Page Filters\",\"Page Visual Filters\",\"hextodec\",\"Tables and Fields\",\"Page Visual actual coordinates\",\"Page Visuals starter\",\"PBIX filename\"]"
+      },
+      {
+        "name": "PBI_ProTooling",
+        "value": "[\"DevMode\"]"
+      }
+    ],
+    "culture": "en-US",
+    "cultures": [
+      {
+        "name": "en-US",
+        "linguisticMetadata": {
+          "content": {
+            "DynamicImprovement": "HighConfidence",
+            "Entities": {
+              "measures.svg_image_url": {
+                "Definition": {
+                  "Binding": {
+                    "ConceptualEntity": " Measures",
+                    "ConceptualProperty": "svg Image URL"
+                  }
+                },
+                "State": "Generated",
+                "Terms": [
+                  {
+                    "Page Thumbnail": {
+                      "Source": {
+                        "Agent": "PowerBI.VisualColumnRename",
+                        "Type": "External"
+                      },
+                      "State": "Suggested",
+                      "Weight": 0.9
+                    }
+                  }
+                ]
+              },
+              "page_visuals.selection_pane_name": {
+                "Definition": {
+                  "Binding": {
+                    "ConceptualEntity": "Page Visuals",
+                    "ConceptualProperty": "Selection Pane Name"
+                  }
+                },
+                "State": "Generated",
+                "Terms": [
+                  {
+                    "Visual Name": {
+                      "Source": {
+                        "Agent": "PowerBI.VisualColumnRename",
+                        "Type": "External"
+                      },
+                      "State": "Suggested",
+                      "Weight": 0.9
+                    }
+                  }
+                ]
+              },
+              "pages.reportname": {
+                "Definition": {
+                  "Binding": {
+                    "ConceptualEntity": "Pages",
+                    "ConceptualProperty": "ReportName"
+                  }
+                },
+                "State": "Generated",
+                "Terms": [
+                  {
+                    "Report Name": {
+                      "Source": {
+                        "Agent": "PowerBI.VisualColumnRename",
+                        "Type": "External"
+                      },
+                      "State": "Suggested",
+                      "Weight": 0.9
+                    }
+                  }
+                ]
+              },
+              "report_filters.name": {
+                "Definition": {
+                  "Binding": {
+                    "ConceptualEntity": "Report Filters",
+                    "ConceptualProperty": "name"
+                  }
+                },
+                "State": "Generated",
+                "Terms": [
+                  {
+                    "Filter Name": {
+                      "Source": {
+                        "Agent": "PowerBI.VisualColumnRename",
+                        "Type": "External"
+                      },
+                      "State": "Suggested",
+                      "Weight": 0.9
+                    }
+                  }
+                ]
+              }
+            },
+            "Language": "en-US",
+            "Version": "2.0.0"
+          },
+          "contentType": "json"
+        }
+      }
+    ],
+    "dataAccessOptions": {
+      "legacyRedirects": true,
+      "returnErrorValuesAsNull": true
+    },
+    "defaultPowerBIDataSourceVersion": "powerBI_V3",
+    "expressions": [
+      {
+        "name": "OpenZipFile",
+        "annotations": [
+          {
+            "name": "PBI_NavigationStepName",
+            "value": "Navigation"
+          },
+          {
+            "name": "PBI_ResultType",
+            "value": "Function"
+          }
+        ],
+        "expression": [
+          "//2019-09-01:  Function added by Marco Russo (https://twitter.com/marcorus/status/1167486794990084096)",
+          "let",
+          "    Source = (ZIPFile) =>",
+          "let",
+          "    Header = BinaryFormat.Record([",
+          "        MiscHeader = BinaryFormat.Binary(14),",
+          "        BinarySize = BinaryFormat.ByteOrder(BinaryFormat.UnsignedInteger32, ByteOrder.LittleEndian),",
+          "        FileSize   = BinaryFormat.ByteOrder(BinaryFormat.UnsignedInteger32, ByteOrder.LittleEndian),",
+          "        FileNameLen= BinaryFormat.ByteOrder(BinaryFormat.UnsignedInteger16, ByteOrder.LittleEndian),",
+          "        ExtrasLen  = BinaryFormat.ByteOrder(BinaryFormat.UnsignedInteger16, ByteOrder.LittleEndian)    ",
+          "    ]),",
+          " ",
+          "    HeaderChoice = BinaryFormat.Choice(",
+          "        BinaryFormat.ByteOrder(BinaryFormat.UnsignedInteger32, ByteOrder.LittleEndian),",
+          "        each if _ <> 67324752             // not the IsValid number? then return a dummy formatter",
+          "            then BinaryFormat.Record([IsValid = false, Filename=null, Content=null])",
+          "            else BinaryFormat.Choice(",
+          "                    BinaryFormat.Binary(26),      // Header payload - 14+4+4+2+2",
+          "                    each BinaryFormat.Record([",
+          "                        IsValid  = true,",
+          "                        Filename = BinaryFormat.Text(Header(_)[FileNameLen]),",
+          "                        Extras   = BinaryFormat.Text(Header(_)[ExtrasLen]),",
+          "                        Content  = BinaryFormat.Transform(",
+          "                            BinaryFormat.Binary(Header(_)[BinarySize]),",
+          "                            (x) => try Binary.Buffer(Binary.Decompress(x, Compression.Deflate)) otherwise null",
+          "                        )",
+          "                        ]),",
+          "                        type binary                   // enable streaming",
+          "                )",
+          "    ),",
+          " ",
+          "    ZipFormat = BinaryFormat.List(HeaderChoice, each _[IsValid] = true),",
+          " ",
+          "    Entries = List.Transform(",
+          "        List.RemoveLastN( ZipFormat(ZIPFile), 1),",
+          "        (e) => [FileName = e[Filename], Content = e[Content] ]",
+          "    )",
+          "in",
+          "    Table.FromRecords(Entries)",
+          "in",
+          "    Source"
+        ],
+        "kind": "m",
+        "lineageTag": "571a69a5-161f-4408-a0d6-62b41abebe75",
+        "queryGroup": "Report Layout"
+      },
+      {
+        "name": "Report Layout",
+        "annotations": [
+          {
+            "name": "PBI_NavigationStepName",
+            "value": "Navigation"
+          },
+          {
+            "name": "PBI_ResultType",
+            "value": "Table"
+          }
+        ],
+        "expression": [
+          "let",
+          "    //2019-09-01:  Marco Russo replaced \"Source\" line with the first 4 lines (https://twitter.com/marcorus/status/1167486794990084096)",
+          "    //Source = Table.FromColumns({Lines.FromBinary(File.Contents(#\"Extracted zip file top level folder\" & \"\\Report\\Layout\"), null, null, TextEncoding.Utf16)}),",
+          "    FileContents = File.Contents(#\"PBIX filename\"),",
+          "    ZipContents = OpenZipFile(FileContents),",
+          "    ReportLayoutFile = Table.SelectRows(ZipContents,each ([FileName] = \"Report/Layout\")),",
+          "    Source = Table.FromColumns({Lines.FromBinary(ReportLayoutFile{0}[Content], null, null, TextEncoding.Utf16)}),    ",
+          "    #\"Added Custom2\" = Table.AddColumn(Source, \"json\", each Json.Document([Column1])),",
+          "    #\"Removed Other Columns\" = Table.SelectColumns(#\"Added Custom2\",{\"json\"}),",
+          "    #\"Expanded Custom.2\" = Table.ExpandRecordColumn(#\"Removed Other Columns\", \"json\", {\"id\", \"reportId\", \"theme\", \"filters\", \"resourcePackages\", \"sections\", \"config\", \"layoutOptimization\", \"pods\"}, {\"id\", \"reportId\", \"theme\", \"filters\", \"resourcePackages\", \"sections\", \"config\", \"layoutOptimization\", \"pods\"}),",
+          "    #\"Added Custom\" = Table.AddColumn(#\"Expanded Custom.2\", \"ReportPath\", each #\"PBIX filename\"),",
+          "    #\"Split Column by Delimiter\" = Table.SplitColumn(#\"Added Custom\", \"ReportPath\", Splitter.SplitTextByEachDelimiter({\"\\\"}, QuoteStyle.Csv, true), {\"ReportPath\", \"ReportName\"}),",
+          "    #\"Changed Type\" = Table.TransformColumnTypes(#\"Split Column by Delimiter\",{{\"ReportPath\", type text}, {\"ReportName\", type text}})",
+          "in",
+          "    #\"Changed Type\""
+        ],
+        "kind": "m",
+        "lineageTag": "97f9d00c-3730-430e-ba2a-81a568c0080c",
+        "queryGroup": "Report Layout"
+      },
+      {
+        "name": "Page Config",
+        "annotations": [
+          {
+            "name": "PBI_NavigationStepName",
+            "value": "Navigation"
+          },
+          {
+            "name": "PBI_ResultType",
+            "value": "Table"
+          }
+        ],
+        "expression": [
+          "let",
+          "    Source = Pages,",
+          "    #\"Removed Other Columns\" = Table.SelectColumns(Source,{\"PageID\", \"config\"}),",
+          "    #\"Added Custom\" = Table.AddColumn(#\"Removed Other Columns\", \"config json\", each Json.Document([config])),",
+          "    #\"Expanded config json\" = Table.ExpandRecordColumn(#\"Added Custom\", \"config json\", {\"objects\"}, {\"objects\"}),",
+          "    #\"Expanded objects\" = Table.ExpandRecordColumn(#\"Expanded config json\", \"objects\", {\"background\"}, {\"background\"}),",
+          "    #\"Expanded background\" = Table.ExpandListColumn(#\"Expanded objects\", \"background\"),",
+          "    #\"Expanded background1\" = Table.ExpandRecordColumn(#\"Expanded background\", \"background\", {\"properties\"}, {\"properties\"}),",
+          "    #\"Expanded properties\" = Table.ExpandRecordColumn(#\"Expanded background1\", \"properties\", {\"image\"}, {\"image\"}),",
+          "    #\"Expanded image\" = Table.ExpandRecordColumn(#\"Expanded properties\", \"image\", {\"image\"}, {\"image.1\"}),",
+          "    #\"Expanded image.1\" = Table.ExpandRecordColumn(#\"Expanded image\", \"image.1\", {\"name\", \"url\", \"scaling\"}, {\"name\", \"url\", \"scaling\"}),",
+          "    #\"Expanded name\" = Table.ExpandRecordColumn(#\"Expanded image.1\", \"name\", {\"expr\"}, {\"expr\"}),",
+          "    #\"Expanded expr\" = Table.ExpandRecordColumn(#\"Expanded name\", \"expr\", {\"Literal\"}, {\"Literal\"}),",
+          "    #\"Expanded Literal\" = Table.ExpandRecordColumn(#\"Expanded expr\", \"Literal\", {\"Value\"}, {\"Value\"}),",
+          "    #\"Expanded url\" = Table.ExpandRecordColumn(#\"Expanded Literal\", \"url\", {\"expr\"}, {\"expr\"}),",
+          "    #\"Expanded expr1\" = Table.ExpandRecordColumn(#\"Expanded url\", \"expr\", {\"ResourcePackageItem\"}, {\"ResourcePackageItem\"}),",
+          "    #\"Expanded ResourcePackageItem\" = Table.ExpandRecordColumn(#\"Expanded expr1\", \"ResourcePackageItem\", {\"PackageName\", \"PackageType\", \"ItemName\"}, {\"PackageName\", \"PackageType\", \"ItemName\"}),",
+          "    #\"Expanded scaling\" = Table.ExpandRecordColumn(#\"Expanded ResourcePackageItem\", \"scaling\", {\"expr\"}, {\"expr\"}),",
+          "    #\"Expanded expr2\" = Table.ExpandRecordColumn(#\"Expanded scaling\", \"expr\", {\"Literal\"}, {\"Literal\"}),",
+          "    #\"Expanded Literal1\" = Table.ExpandRecordColumn(#\"Expanded expr2\", \"Literal\", {\"Value\"}, {\"Value.1\"}),",
+          "    #\"Added Conditional Column\" = Table.AddColumn(#\"Expanded Literal1\", \"Page Visibility\", each if Text.Contains([config], \"\"\"visibility\"\":1\") then \"hidden\" else \"visible\", type text),",
+          "    #\"Changed Type\" = Table.TransformColumnTypes(#\"Added Conditional Column\",{{\"config\", type text}, {\"Value\", type text}, {\"PackageName\", type text}, {\"PackageType\", type text}, {\"ItemName\", type text}, {\"Value.1\", type text}})",
+          "in",
+          "    #\"Changed Type\""
+        ],
+        "kind": "m",
+        "lineageTag": "e1e0d7d9-d2bd-4c2a-9c84-38688f487a9b",
+        "queryGroup": "Report Layout"
+      },
+      {
+        "name": "Page Visual type colors",
+        "annotations": [
+          {
+            "name": "PBI_NavigationStepName",
+            "value": "Navigation"
+          },
+          {
+            "name": "PBI_ResultType",
+            "value": "Table"
+          }
+        ],
+        "expression": [
+          "let",
+          "    Source = Table.FromRows(Json.Document(Binary.Decompress(Binary.FromText(\"NY/NbsIwEITfJb1y8Nr5sY+xQ3opBVW9VBEHCywUNXWQBUG8fb27JL5kvrFnd4ahgGJTtNc0nuZb/nsToJzqiuNmKGTWNoyXgBygLuuauMp6N0a6bh0ewmXW38FPiLedUXVLuMr6wy8hnkNCSzpVKSCrzvornJF2xgrNOU3W++Qjz+17Zw0n6ax/wjTNDzKk08ALGRwx/tF9B6YTjEFk8J5CiGjUujFyywZ2dk9P3AAe5tR4ulOQ6Kv8McfGh3u6TuSoToN+vcDSO38J8eYprHLSSbYqnv5E3urSyRfH1ocx/iKvWnBCMG8oKs0zrQVG6NXB4jbND95XN3Y1sPh+GhdaqzRqNSQ2//QLzZZGAvLjPw==\", BinaryEncoding.Base64), Compression.Deflate)), let _t = ((type text) meta [Serialized.Text = true]) in type table [Index = _t, ColorName = _t, hexColor = _t]),",
+          "    #\"Changed Type\" = Table.TransformColumnTypes(Source,{{\"Index\", Int64.Type}, {\"ColorName\", type text}}),",
+          "    #\"Duplicated Column\" = Table.DuplicateColumn(#\"Changed Type\", \"hexColor\", \"hexColor - Copy\"),",
+          "    #\"Lowercased Text\" = Table.TransformColumns(#\"Duplicated Column\",{{\"hexColor - Copy\", Text.Lower, type text}}),",
+          "    #\"Split Column by Delimiter\" = Table.SplitColumn(#\"Lowercased Text\", \"hexColor - Copy\", Splitter.SplitTextByEachDelimiter({\"#\"}, QuoteStyle.Csv, false), {\"hexColor - Copy.1\", \"hexColor - Copy.2\"}),",
+          "    #\"Changed Type1\" = Table.TransformColumnTypes(#\"Split Column by Delimiter\",{{\"hexColor\", type text}, {\"hexColor - Copy.1\", type text}, {\"hexColor - Copy.2\", type text}}),",
+          "    #\"Split Column by Position\" = Table.SplitColumn(#\"Changed Type1\", \"hexColor - Copy.2\", Splitter.SplitTextByRepeatedLengths(2), {\"r\", \"g\", \"b\"}),",
+          "    #\"Removed Columns\" = Table.RemoveColumns(#\"Split Column by Position\",{\"hexColor - Copy.1\"}),",
+          "    #\"Changed Type2\" = Table.TransformColumnTypes(#\"Removed Columns\",{{\"r\", type text}, {\"g\", type text}, {\"b\", type text}}),",
+          "    #\"Unpivoted Other Columns\" = Table.UnpivotOtherColumns(#\"Changed Type2\", {\"Index\", \"ColorName\", \"hexColor\"}, \"Attribute\", \"Value\"),",
+          "    #\"Split Column by Position1\" = Table.SplitColumn(#\"Unpivoted Other Columns\", \"Value\", Splitter.SplitTextByRepeatedLengths(1), {\"Value.1\", \"Value.2\"}),",
+          "    #\"Changed Type3\" = Table.TransformColumnTypes(#\"Split Column by Position1\",{{\"Value.1\", type text}, {\"Value.2\", type text}}),",
+          "    #\"Merged Queries\" = Table.NestedJoin(#\"Changed Type3\", {\"Value.1\"}, hextodec, {\"hex\"}, \"hextodec\", JoinKind.LeftOuter),",
+          "    #\"Expanded hextodec\" = Table.ExpandTableColumn(#\"Merged Queries\", \"hextodec\", {\"dec\"}, {\"dec1\"}),",
+          "    #\"Merged Queries1\" = Table.NestedJoin(#\"Expanded hextodec\", {\"Value.2\"}, hextodec, {\"hex\"}, \"hextodec\", JoinKind.LeftOuter),",
+          "    #\"Expanded hextodec1\" = Table.ExpandTableColumn(#\"Merged Queries1\", \"hextodec\", {\"dec\"}, {\"dec2\"}),",
+          "    #\"Added Custom\" = Table.AddColumn(#\"Expanded hextodec1\", \"color value\", each ([dec1]*16) + [dec2], Int64.Type),",
+          "    #\"Removed Columns1\" = Table.RemoveColumns(#\"Added Custom\",{\"Value.1\", \"Value.2\", \"dec1\", \"dec2\"}),",
+          "    #\"Pivoted Column\" = Table.Pivot(#\"Removed Columns1\", List.Distinct(#\"Removed Columns1\"[Attribute]), \"Attribute\", \"color value\"),",
+          "    #\"Added Custom1\" = Table.AddColumn(#\"Pivoted Column\", \"foreColor\", each if [r]*0.299 + [g]*0.587 + [b]*0.114 > 186 then \"#000000\" else \"#ffffff\", type text)",
+          "in",
+          "    #\"Added Custom1\""
+        ],
+        "kind": "m",
+        "lineageTag": "fbeb2b10-7a34-4947-acd3-9b5e651fce51"
+      },
+      {
+        "name": "Page Visual Filters",
+        "annotations": [
+          {
+            "name": "PBI_NavigationStepName",
+            "value": "Navigation"
+          },
+          {
+            "name": "PBI_ResultType",
+            "value": "Table"
+          }
+        ],
+        "expression": [
+          "let",
+          "    Source = #\"Page Visuals\",",
+          "    #\"Removed Other Columns\" = Table.SelectColumns(Source,{\"VisualID\", \"filters\"}),",
+          "    #\"Filtered Rows\" = Table.SelectRows(#\"Removed Other Columns\", each ([filters] <> null and [filters] <> \"[]\")),",
+          "    #\"Added Custom\" = Table.AddColumn(#\"Filtered Rows\", \"Custom\", each Json.Document([filters])),",
+          "    #\"Expanded Custom\" = Table.ExpandListColumn(#\"Added Custom\", \"Custom\"),",
+          "    #\"Expanded Custom1\" = Table.ExpandRecordColumn(#\"Expanded Custom\", \"Custom\", {\"name\", \"type\", \"howCreated\", \"expression\"}, {\"name\", \"type\", \"howCreated\", \"expression\"}),",
+          "    #\"Sorted Rows\" = Table.Sort(#\"Expanded Custom1\",{{\"VisualID\", Order.Ascending}}),",
+          "    #\"Expanded expression\" = Table.ExpandRecordColumn(#\"Sorted Rows\", \"expression\", {\"Column\", \"Aggregation\"}, {\"expression.Column\", \"expression.Aggregation\"}),",
+          "    #\"Expanded expression.Column\" = Table.ExpandRecordColumn(#\"Expanded expression\", \"expression.Column\", {\"Expression\", \"Property\"}, {\"expression.Column.Expression\", \"expression.Column.Property\"}),",
+          "    #\"Expanded expression.Column.Expression\" = Table.ExpandRecordColumn(#\"Expanded expression.Column\", \"expression.Column.Expression\", {\"SourceRef\"}, {\"expression.Column.Expression.SourceRef\"}),",
+          "    #\"Expanded expression.Column.Expression.SourceRef\" = Table.ExpandRecordColumn(#\"Expanded expression.Column.Expression\", \"expression.Column.Expression.SourceRef\", {\"Entity\"}, {\"expression.Column.Expression.SourceRef.Entity\"}),",
+          "    #\"Expanded expression.Aggregation\" = Table.ExpandRecordColumn(#\"Expanded expression.Column.Expression.SourceRef\", \"expression.Aggregation\", {\"Expression\", \"Function\"}, {\"expression.Aggregation.Expression\", \"expression.Aggregation.Function\"}),",
+          "    #\"Expanded expression.Aggregation.Expression\" = Table.ExpandRecordColumn(#\"Expanded expression.Aggregation\", \"expression.Aggregation.Expression\", {\"Column\"}, {\"expression.Aggregation.Expression.Column\"}),",
+          "    #\"Expanded expression.Aggregation.Expression.Column\" = Table.ExpandRecordColumn(#\"Expanded expression.Aggregation.Expression\", \"expression.Aggregation.Expression.Column\", {\"Expression\", \"Property\"}, {\"expression.Aggregation.Expression.Column.Expression\", \"expression.Aggregation.Expression.Column.Property\"}),",
+          "    #\"Expanded expression.Aggregation.Expression.Column.Expression\" = Table.ExpandRecordColumn(#\"Expanded expression.Aggregation.Expression.Column\", \"expression.Aggregation.Expression.Column.Expression\", {\"SourceRef\"}, {\"expression.Aggregation.Expression.Column.Expression.SourceRef\"}),",
+          "    #\"Expanded expression.Aggregation.Expression.Column.Expression.SourceRef\" = Table.ExpandRecordColumn(#\"Expanded expression.Aggregation.Expression.Column.Expression\", \"expression.Aggregation.Expression.Column.Expression.SourceRef\", {\"Entity\"}, {\"expression.Aggregation.Expression.Column.Expression.SourceRef.Entity\"}),",
+          "    #\"Added Conditional Column\" = Table.AddColumn(#\"Expanded expression.Aggregation.Expression.Column.Expression.SourceRef\", \"Table\", each if [expression.Column.Expression.SourceRef.Entity] <> null then [expression.Column.Expression.SourceRef.Entity] else [expression.Aggregation.Expression.Column.Expression.SourceRef.Entity], type text),",
+          "    #\"Added Conditional Column1\" = Table.AddColumn(#\"Added Conditional Column\", \"Col/Measure\", each if [expression.Column.Property] <> null then [expression.Column.Property] else [expression.Aggregation.Expression.Column.Property], type text),",
+          "    #\"Removed Other Columns1\" = Table.SelectColumns(#\"Added Conditional Column1\",{\"VisualID\", \"name\", \"type\", \"howCreated\", \"Table\", \"Col/Measure\"}),",
+          "    #\"Renamed Columns\" = Table.RenameColumns(#\"Removed Other Columns1\",{{\"name\", \"QueryRefType\"}}),",
+          "    #\"Replaced Value\" = Table.ReplaceValue(#\"Renamed Columns\",null,\"Filter\",Replacer.ReplaceValue,{\"QueryRefType\"})",
+          "in",
+          "    #\"Replaced Value\""
+        ],
+        "kind": "m",
+        "lineageTag": "04c5c0b4-12cc-4dc4-80f7-3b66c1a73752",
+        "queryGroup": "Page Visuals"
+      },
+      {
+        "name": "hextodec",
+        "annotations": [
+          {
+            "name": "PBI_NavigationStepName",
+            "value": "Navigation"
+          },
+          {
+            "name": "PBI_ResultType",
+            "value": "Table"
+          }
+        ],
+        "expression": [
+          "let",
+          "    Source = Table.FromRows(Json.Document(Binary.Decompress(Binary.FromText(\"Jc25EcAgEEPRXogJzA217BD47L8ES9pAMy/SNwtHiNiOFhKUpAxlqUBFqlCVGtSkDnVpQEOa0JQWtKSTzx65SK/cpGce0jsv6aGPRGn/\", BinaryEncoding.Base64), Compression.Deflate)), let _t = ((type text) meta [Serialized.Text = true]) in type table [hex = _t, dec = _t]),",
+          "    #\"Changed Type\" = Table.TransformColumnTypes(Source,{{\"hex\", type text}, {\"dec\", Int64.Type}})",
+          "in",
+          "    #\"Changed Type\""
+        ],
+        "kind": "m",
+        "lineageTag": "30f7c1e2-49c1-46de-a889-e9374b25ca72"
+      },
+      {
+        "name": "Page Visual actual coordinates",
+        "annotations": [
+          {
+            "name": "PBI_NavigationStepName",
+            "value": "Navigation"
+          },
+          {
+            "name": "PBI_ResultType",
+            "value": "Table"
+          }
+        ],
+        "expression": [
+          "// Adapted from thebiccountant.com:",
+          "// https://www.thebiccountant.com/2017/02/14/dynamically-flatten-parent-child-hierarchies-in-dax-and-powerbi/",
+          "",
+          "let",
+          "//Debug Parameters",
+          "ParChTable = #\"Page Visuals starter\",",
+          "ChildKey = \"PageIDname\",",
+          "ParentKey = \"PageIDparentName\",",
+          "LevelColumnName = \"x\",",
+          "LevelColumnName2 = \"y\",",
+          "    SelectRelevantColumns = Table.SelectColumns(ParChTable, {ChildKey, ParentKey, LevelColumnName, LevelColumnName2}),",
+          "    //*/",
+          "",
+          "    #\"Changed Type\" = Table.TransformColumnTypes(SelectRelevantColumns,{{ChildKey, type text}, {ParentKey, type text}, {LevelColumnName, type text}, {LevelColumnName2, type text}}),",
+          "    ReplaceNulls = Table.ReplaceValue(#\"Changed Type\",null,\"\",Replacer.ReplaceValue,{ParentKey}),",
+          "    //    CleanParChTable = Table.Distinct(ReplaceNulls , {ChildKey, ParentKey}),",
+          "    MissingParents = List.Buffer(List.Select(List.Difference(List.Distinct(Table.Column(ReplaceNulls , ParentKey)), List.Distinct(Table.Column(ReplaceNulls , ChildKey))), each _ <> \"\")),",
+          "    CleanTable = Table.Buffer(Table.Combine({ReplaceNulls , #table({ChildKey, LevelColumnName, LevelColumnName2, ParentKey}, List.Transform(MissingParents, each {_, \"Unknown TopLevel\"& Text.From(List.PositionOf(MissingParents, _)), \"\"}))})),",
+          "    #\"Merged Queries0\" = Table.NestedJoin(CleanTable,{ChildKey},CleanTable,{ParentKey},\"SelectRelevantColumns\",JoinKind.LeftOuter),",
+          "    CheckIfIsLeaf = Table.AddColumn(#\"Merged Queries0\", \"IsLeaf\", each if Table.IsEmpty([SelectRelevantColumns]) then \"yes\" else \"no\"),",
+          "    #\"Replaced Value1\" = Table.ReplaceValue(CheckIfIsLeaf,null,\"\",Replacer.ReplaceValue,{ParentKey, LevelColumnName, LevelColumnName2}),",
+          "    AddStartPath = Table.AddColumn(#\"Replaced Value1\", \"Path\", each Text.Trim(Record.Field(_, ChildKey)&\"|\"&Record.Field(_,ParentKey), \"|\")),",
+          "    #\"Duplicated Column\" = Table.DuplicateColumn(AddStartPath, LevelColumnName, \"First_x\"),",
+          "    #\"Duplicated Column1\" = Table.DuplicateColumn(#\"Duplicated Column\", \"y\", \"First_y\"),",
+          "    Feed = Table.DuplicateColumn(#\"Duplicated Column1\", ParentKey, \"FirstParentKey\"),",
+          "",
+          "// Retrieve all parents per row",
+          "    fnAllParents = List.Generate(()=>",
+          "    [Result= Feed, Level=1],",
+          "    each Table.RowCount([Result]) > 0,",
+          "    each [ Result= let",
+          "            #\"Merged Queries\" = Table.NestedJoin([Result],{ParentKey},CleanTable,{ChildKey},\"Added Custom\",JoinKind.Inner),",
+          "            #\"Removed Columns1\" = Table.RemoveColumns(#\"Merged Queries\",{ParentKey}),",
+          "            #\"Expanded Added Custom\" = Table.ExpandTableColumn(#\"Removed Columns1\", \"Added Custom\", {ParentKey, LevelColumnName, LevelColumnName2}, {\"ParentKey.1\", \"x.1\", \"y.1\"}),",
+          "            #\"Duplicated Column\" = Table.DuplicateColumn(#\"Expanded Added Custom\", \"ParentKey.1\", ParentKey),",
+          "            #\"Merged Columns\" = Table.CombineColumns(#\"Duplicated Column\",{\"Path\", \"ParentKey.1\"},Combiner.CombineTextByDelimiter(\"|\", QuoteStyle.None),\"Path\"),",
+          "            #\"Merged Columns2\" = Table.CombineColumns( #\"Merged Columns\" ,{LevelColumnName, \"x.1\"},Combiner.CombineTextByDelimiter(\"|\", QuoteStyle.None),LevelColumnName),",
+          "            #\"Merged Columns3\" = Table.CombineColumns( #\"Merged Columns2\" ,{LevelColumnName2, \"y.1\"},Combiner.CombineTextByDelimiter(\"|\", QuoteStyle.None),LevelColumnName2)",
+          "          in",
+          "            #\"Merged Columns3\",",
+          "          Level = [Level]+1",
+          "        ]),",
+          "    ConvertToTable = Table.FromList(fnAllParents, Splitter.SplitByNothing(), null, null, ExtraValues.Error),",
+          "    ExpandLevel = Table.ExpandRecordColumn(ConvertToTable, \"Column1\", {\"Result\", \"Level\"}, {\"Result\", \"Level\"}),",
+          "    #\"Expanded Result\" = Table.ExpandTableColumn(ExpandLevel, \"Result\", {ChildKey, LevelColumnName, LevelColumnName2, ParentKey, \"Path\", \"FirstName\", \"FirstParentKey\"}, {\"PageIDname\", \"x\", \"y\", \"ParentKey\", \"Path\", \"FirstName\", \"FirstParentKey\"}),",
+          "    #\"Filtered Rows1\" = Table.SelectRows(#\"Expanded Result\", each ([ParentKey] = null or [ParentKey] = \"\")),",
+          "    #\"Removed Columns\" = Table.RemoveColumns(#\"Filtered Rows1\",{\"ParentKey\", \"FirstName\", \"FirstParentKey\"}),",
+          "    #\"Trimmed Text\" = Table.TransformColumns(#\"Removed Columns\",{{\"Path\", each Text.Trim(_, \"|\")}}),",
+          "    ReverseOrderPath = Table.TransformColumns(#\"Trimmed Text\",{{\"Path\", each Text.Combine(List.Reverse(Text.Split(_, \"|\")), \"|\")}}),",
+          "    #\"Split Column by Delimiter\" = Table.ExpandListColumn(Table.TransformColumns(ReverseOrderPath, {{\"x\", Splitter.SplitTextByDelimiter(\"|\", QuoteStyle.Csv), let itemType = (type nullable text) meta [Serialized.Text = true] in type {itemType}}}), \"x\"),",
+          "    #\"Changed Type1\" = Table.TransformColumnTypes(#\"Split Column by Delimiter\",{{\"x\", type number}}),",
+          "    #\"Grouped Rows\" = Table.Group(#\"Changed Type1\", {\"PageIDname\", \"y\", \"Path\", \"Level\"}, {{\"x\", each List.Sum([x]), type number}}),",
+          "    #\"Split Column by Delimiter1\" = Table.ExpandListColumn(Table.TransformColumns(#\"Grouped Rows\", {{\"y\", Splitter.SplitTextByDelimiter(\"|\", QuoteStyle.Csv), let itemType = (type nullable text) meta [Serialized.Text = true] in type {itemType}}}), \"y\"),",
+          "    #\"Changed Type2\" = Table.TransformColumnTypes(#\"Split Column by Delimiter1\",{{\"y\", type number}}),",
+          "    #\"Grouped Rows1\" = Table.Group(#\"Changed Type2\", {\"PageIDname\", \"Path\", \"Level\", \"x\"}, {{\"y\", each List.Sum([y]), type number}}),",
+          "    #\"Changed Type3\" = Table.TransformColumnTypes(#\"Grouped Rows1\",{{\"PageIDname\", type text}, {\"Path\", type text}, {\"Level\", Int64.Type}})",
+          "in",
+          "    #\"Changed Type3\""
+        ],
+        "kind": "m",
+        "lineageTag": "23badf34-3d19-4014-8c71-178e4c5957ac",
+        "queryGroup": "Page Visuals"
+      },
+      {
+        "name": "Page Visuals starter",
+        "annotations": [
+          {
+            "name": "PBI_NavigationStepName",
+            "value": "Navigation"
+          },
+          {
+            "name": "PBI_ResultType",
+            "value": "Table"
+          }
+        ],
+        "expression": [
+          "let",
+          "    Source = Pages,",
+          "    #\"Removed Other Columns\" = Table.SelectColumns(Source,{\"PageID\", \"Page Name\", \"visualContainers\", \"height\", \"width\"}),",
+          "    #\"Expanded visualContainers\" = Table.ExpandListColumn(#\"Removed Other Columns\", \"visualContainers\"),",
+          "    #\"Added Index\" = Table.AddIndexColumn(#\"Expanded visualContainers\", \"VisualID\", 1, 1),",
+          "    #\"Reordered Columns\" = Table.ReorderColumns(#\"Added Index\",{\"PageID\", \"VisualID\", \"visualContainers\"}),",
+          "    #\"Renamed Columns\" = Table.RenameColumns(#\"Reordered Columns\",{{\"height\", \"pageHeight\"}, {\"width\", \"pageWidth\"}}),",
+          "    #\"Expanded visualContainers1\" = Table.ExpandRecordColumn(#\"Renamed Columns\", \"visualContainers\", {\"x\", \"y\", \"z\", \"width\", \"height\", \"config\", \"filters\", \"tabOrder\", \"query\", \"dataTransforms\"}, {\"x\", \"y\", \"z\", \"width\", \"height\", \"config\", \"filters\", \"tabOrder\", \"query\", \"dataTransforms\"}),",
+          "    #\"Filtered Rows\" = Table.SelectRows(#\"Expanded visualContainers1\", each ([config] <> null)),",
+          "    #\"Changed Type\" = Table.TransformColumnTypes(#\"Filtered Rows\",{{\"config\", type text}}),",
+          "    #\"Added config json\" = Table.AddColumn(#\"Changed Type\", \"config json\", each Json.Document([config])),",
+          "    #\"Expanded config json\" = Table.ExpandRecordColumn(#\"Added config json\", \"config json\", {\"name\", \"parentGroupName\", \"singleVisual\", \"singleVisualGroup\"}, {\"name\", \"parentName\", \"singleVisual\", \"singleVisualGroup\"}),",
+          "    #\"Expanded singleVisual\" = Table.ExpandRecordColumn(#\"Expanded config json\", \"singleVisual\", {\"visualType\", \"vcObjects\"}, {\"singleVisual.visualType\", \"singleVisual.vcObjects\"}),",
+          "    #\"Changed Type1\" = Table.TransformColumnTypes(#\"Expanded singleVisual\",{{\"pageHeight\", type number}, {\"x\", type number}, {\"y\", type number}, {\"width\", type number}, {\"height\", type number}, {\"z\", type number}, {\"singleVisual.visualType\", type text}, {\"pageWidth\", type number}, {\"Page Name\", type text}}),",
+          "    #\"Inserted Merged Column\" = Table.AddColumn(#\"Changed Type1\", \"PageIDname\", each Text.Combine({Text.From([PageID], \"en-US\"), \"_\", [name]}), type text),",
+          "    #\"Added Conditional Column\" = Table.AddColumn(#\"Inserted Merged Column\", \"PageIDparentName\", each if [parentName] = null then null else Text.From([PageID]) & \"_\" & [parentName], type text)",
+          "in",
+          "    #\"Added Conditional Column\""
+        ],
+        "kind": "m",
+        "lineageTag": "937c21b8-8f5d-4a50-ae42-7f45b616ee8c",
+        "queryGroup": "Page Visuals"
+      },
+      {
+        "name": "PBIX filename",
+        "annotations": [
+          {
+            "name": "PBI_ResultType",
+            "value": "Text"
+          }
+        ],
+        "description": "The file path of the folder after extracting the zip file version of your pbix file.",
+        "expression": "\"C:\\2020SU11 Blog Demo - November.pbix\" meta [IsParameterQuery=true, Type=\"Text\", IsParameterQueryRequired=true]",
+        "kind": "m",
+        "lineageTag": "aca2e471-f318-46d0-a90d-c37951a3039c",
+        "queryGroup": "Parameters"
+      }
+    ],
+    "queryGroups": [
+      {
+        "annotations": [
+          {
+            "name": "PBI_QueryGroupOrder",
+            "value": "1"
+          }
+        ],
+        "folder": "Report Layout"
+      },
+      {
+        "annotations": [
+          {
+            "name": "PBI_QueryGroupOrder",
+            "value": "0"
+          }
+        ],
+        "folder": "Parameters"
+      },
+      {
+        "annotations": [
+          {
+            "name": "PBI_QueryGroupOrder",
+            "value": "3"
+          }
+        ],
+        "folder": "Filters"
+      },
+      {
+        "annotations": [
+          {
+            "name": "PBI_QueryGroupOrder",
+            "value": "2"
+          }
+        ],
+        "folder": "Page Visuals"
+      }
+    ],
+    "relationships": [
+      {
+        "name": "6eb2f8a4-3b6c-4481-8538-cdf97571dc54",
+        "crossFilteringBehavior": "bothDirections",
+        "fromColumn": "PageID",
+        "fromTable": "Page Visuals",
+        "toColumn": "PageID",
+        "toTable": "Pages"
+      },
+      {
+        "name": "4f70d87e-5d16-4278-8993-fad3a01bca15",
+        "crossFilteringBehavior": "bothDirections",
+        "fromColumn": "VisualID",
+        "fromTable": "Page Visuals Data Elements",
+        "toColumn": "VisualID",
+        "toTable": "Page Visuals"
+      },
+      {
+        "name": "1d0fcc6f-8385-495d-a144-2f0f5c840156",
+        "fromColumn": "PageID",
+        "fromTable": "Page Filters",
+        "toColumn": "PageID",
+        "toTable": "Pages"
+      },
+      {
+        "name": "0a485003-c10d-4052-bd5c-94d5892c589a",
+        "fromColumn": "Table.Col/Measure",
+        "fromTable": "Page Visuals Data Elements",
+        "toColumn": "Table.Col/Measure",
+        "toTable": "Tables and Fields"
+      },
+      {
+        "name": "28ef42f4-3c31-4ee3-b5f8-f50f5e620981",
+        "fromColumn": "Table.Col/Measure",
+        "fromTable": "Page Filters",
+        "toColumn": "Table.Col/Measure",
+        "toTable": "Tables and Fields"
+      },
+      {
+        "name": "04786979-68b9-4a7a-8bd3-d2e0b1207737",
+        "fromColumn": "Visual Type",
+        "fromTable": "Page Visuals",
+        "toColumn": "Visual Type",
+        "toTable": "Page Visual Types"
+      },
+      {
+        "name": "0a1d5326-a722-4189-8ed9-acbc08093455",
+        "fromColumn": "Table.Col/Measure",
+        "fromTable": "Report Filters",
+        "toColumn": "Table.Col/Measure",
+        "toTable": "Tables and Fields"
+      }
+    ],
+    "sourceQueryCulture": "en-US",
+    "tables": [
+      {
+        "name": " Measures",
+        "columns": [
+          {
+            "name": "Value",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "int64",
+            "formatString": "0",
+            "isDataTypeInferred": true,
+            "isHidden": true,
+            "isNameInferred": true,
+            "lineageTag": "cc397977-c6e6-4ba6-8634-a638626da9f2",
+            "sourceColumn": "[Value]",
+            "summarizeBy": "sum",
+            "type": "calculatedTableColumn"
+          }
+        ],
+        "lineageTag": "dc11dd0b-590c-4889-bad8-78c5d572faf5",
+        "measures": [
+          {
+            "name": "Visual Count",
+            "expression": "COUNTROWS('Page Visuals')",
+            "formatString": "0",
+            "lineageTag": "235fbe55-cb56-4afa-9216-65b764fb501e"
+          },
+          {
+            "name": "Data Element Count",
+            "expression": "COUNTROWS('Page Visuals Data Elements')",
+            "formatString": "0",
+            "lineageTag": "b7571083-1d55-48c1-a2a7-6fc5d40eb572"
+          },
+          {
+            "name": "svg Image URL",
+            "dataCategory": "ImageUrl",
+            "expression": "IF(OR(ISBLANK([svg Code]), NOT(HASONEVALUE('Pages'[Page Name]))), BLANK(), \"data:image/svg+xml;utf8,\" & SUBSTITUTE([svg Code], \"#\", \"%23\"))",
+            "lineageTag": "1b4a9cfb-23df-4c20-9e41-5c97fca4d961"
+          },
+          {
+            "name": "svg Code",
+            "dataCategory": "ImageUrl",
+            "expression": [
+              "Var viewBox = IF(HASONEVALUE('Pages'[Page Name]), \"viewBox='0 0 \" & ROUND(AVERAGE('Pages'[width])/10, 0) & \" \" & ROUND(AVERAGE('Pages'[height])/10, 0) & \"'\", BLANK()) & \">\"",
+              "        Var background = \"<rect x='0' y = '0' width='\" & ROUND(AVERAGE('Pages'[width])/10, 0) & \"' height='\" & ROUND(AVERAGE('Pages'[height])/10, 0) ",
+              "                        & \"' fill='#dbdbdb' stroke='black' stroke-width='0.2'/><\"",
+              "        Var rectangles = CONCATENATEX('Page Visuals', \"rect x='\" & ROUND([actual x]/10, 0) & \"' y='\" & ROUND([actual y]/10, 0) ",
+              "                        & \"' width='\" & ROUND([width]/10, 0) & \"' height='\" & ROUND([height]/10, 0)",
+              "                        & \"' fill='\" & RELATED('Page Visual types'[hexColor])  & \"'\" & \" stroke='black' stroke-width='0.2'\"",
+              "                        , \"/><\", [z])",
+              "        Var svgCode = IF(LEN(rectangles) > 0, \"<svg xmlns='http://www.w3.org/2000/svg' \" & viewBox & background & rectangles & \"/></svg>\", BLANK())",
+              "    Return svgCode"
+            ],
+            "lineageTag": "bfde93fa-d670-48d5-b707-6a8d148965ad"
+          },
+          {
+            "name": "svg Code Length",
+            "expression": "LEN([svg Code])",
+            "formatString": "0",
+            "lineageTag": "ba59ab75-9a00-4529-8857-3a481eab2e45"
+          },
+          {
+            "name": "Page Filter Count",
+            "expression": "COUNTROWS('Page Filters')",
+            "formatString": "0",
+            "lineageTag": "ebcb2c3d-c288-4d21-824b-fb959fbbba41"
+          },
+          {
+            "name": "Visual Type hexColor",
+            "expression": "CALCULATE(MIN('Page Visual Types'[hexColor]), CROSSFILTER('Page Visual Types'[Visual Type], 'Page Visuals'[Visual Type], Both))",
+            "lineageTag": "54199393-48f2-48f2-aa87-a4ca55551b8b"
+          },
+          {
+            "name": "Visual Type foreColor",
+            "expression": "CALCULATE(MIN('Page Visual Types'[foreColor]), CROSSFILTER('Page Visual Types'[Visual Type], 'Page Visuals'[Visual Type], Both))",
+            "lineageTag": "30335940-c623-4ce5-81bf-49f9305bfae8"
+          }
+        ],
+        "partitions": [
+          {
+            "name": " Measures-a03490ab-c89a-4e57-bb13-1241198639c6",
+            "mode": "import",
+            "source": {
+              "expression": "{Blank()}",
+              "type": "calculated"
+            }
+          }
+        ]
+      },
+      {
+        "name": "DateTableTemplate_7a504d17-c6a3-459d-b1b3-6855274ef482",
+        "annotations": [
+          {
+            "name": "__PBI_TemplateDateTable",
+            "value": "true"
+          },
+          {
+            "name": "DefaultItem",
+            "value": "DateHierarchy"
+          }
+        ],
+        "columns": [
+          {
+            "name": "Date",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "User"
+              }
+            ],
+            "dataCategory": "PaddedDateTableDates",
+            "dataType": "dateTime",
+            "isDataTypeInferred": true,
+            "isHidden": true,
+            "isNameInferred": true,
+            "lineageTag": "e7fbd912-0bce-4fb7-8182-d9a54391cff0",
+            "sourceColumn": "[Date]",
+            "summarizeBy": "none",
+            "type": "calculatedTableColumn"
+          },
+          {
+            "name": "Day",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "User"
+              },
+              {
+                "name": "TemplateId",
+                "value": "Day"
+              }
+            ],
+            "dataCategory": "DayOfMonth",
+            "dataType": "int64",
+            "expression": "DAY([Date])",
+            "isDataTypeInferred": true,
+            "isHidden": true,
+            "lineageTag": "8d662e1c-691d-4f53-b603-ddfe2be0d6a7",
+            "summarizeBy": "none",
+            "type": "calculated"
+          },
+          {
+            "name": "Month",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "User"
+              },
+              {
+                "name": "TemplateId",
+                "value": "Month"
+              }
+            ],
+            "dataCategory": "Months",
+            "dataType": "string",
+            "expression": "FORMAT([Date], \"MMMM\")",
+            "isDataTypeInferred": true,
+            "isHidden": true,
+            "lineageTag": "2e2eec19-d28c-455e-94e5-b690741b7010",
+            "sortByColumn": "MonthNo",
+            "summarizeBy": "none",
+            "type": "calculated"
+          },
+          {
+            "name": "MonthNo",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "User"
+              },
+              {
+                "name": "TemplateId",
+                "value": "MonthNumber"
+              }
+            ],
+            "dataCategory": "MonthOfYear",
+            "dataType": "int64",
+            "expression": "MONTH([Date])",
+            "isDataTypeInferred": true,
+            "isHidden": true,
+            "lineageTag": "a3a5994f-7535-4aa2-886b-9e57c9d9e2d6",
+            "summarizeBy": "none",
+            "type": "calculated"
+          },
+          {
+            "name": "Quarter",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "User"
+              },
+              {
+                "name": "TemplateId",
+                "value": "Quarter"
+              }
+            ],
+            "dataCategory": "Quarters",
+            "dataType": "string",
+            "expression": "\"Qtr \" & [QuarterNo]",
+            "isDataTypeInferred": true,
+            "isHidden": true,
+            "lineageTag": "a7e6398d-9e83-4915-9db1-0eb230adf59a",
+            "sortByColumn": "QuarterNo",
+            "summarizeBy": "none",
+            "type": "calculated"
+          },
+          {
+            "name": "QuarterNo",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "User"
+              },
+              {
+                "name": "TemplateId",
+                "value": "QuarterNumber"
+              }
+            ],
+            "dataCategory": "QuarterOfYear",
+            "dataType": "int64",
+            "expression": "INT(([MonthNo] + 2) / 3)",
+            "isDataTypeInferred": true,
+            "isHidden": true,
+            "lineageTag": "889dc0b3-375a-4e0e-a570-1d1b827845f1",
+            "summarizeBy": "none",
+            "type": "calculated"
+          },
+          {
+            "name": "Year",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "User"
+              },
+              {
+                "name": "TemplateId",
+                "value": "Year"
+              }
+            ],
+            "dataCategory": "Years",
+            "dataType": "int64",
+            "expression": "YEAR([Date])",
+            "isDataTypeInferred": true,
+            "isHidden": true,
+            "lineageTag": "5ef6e8b4-f355-4c80-8d1d-389b2d9665d8",
+            "summarizeBy": "none",
+            "type": "calculated"
+          }
+        ],
+        "hierarchies": [
+          {
+            "name": "Date Hierarchy",
+            "annotations": [
+              {
+                "name": "TemplateId",
+                "value": "DateHierarchy"
+              }
+            ],
+            "levels": [
+              {
+                "name": "Year",
+                "column": "Year",
+                "lineageTag": "580d6049-a224-4601-9ae4-7ac8c9c58765",
+                "ordinal": 0
+              },
+              {
+                "name": "Quarter",
+                "column": "Quarter",
+                "lineageTag": "a0a60ed0-3e7f-42c4-a5d8-0768d1ce50b5",
+                "ordinal": 1
+              },
+              {
+                "name": "Month",
+                "column": "Month",
+                "lineageTag": "62c937b1-a238-473c-aaea-ba0ab3efacc8",
+                "ordinal": 2
+              },
+              {
+                "name": "Day",
+                "column": "Day",
+                "lineageTag": "ebbc7d85-88e1-4ab5-94fe-8521d419b01f",
+                "ordinal": 3
+              }
+            ],
+            "lineageTag": "23269f30-2836-4359-980d-c685030264f6"
+          }
+        ],
+        "isHidden": true,
+        "isPrivate": true,
+        "lineageTag": "0121e875-4d07-4387-a3ed-4bce7188cf08",
+        "partitions": [
+          {
+            "name": "DateTableTemplate_7a504d17-c6a3-459d-b1b3-6855274ef482-c340ce50-ebc2-45b0-9710-74c1f38db901",
+            "mode": "import",
+            "source": {
+              "expression": "Calendar(Date(2015,1,1), Date(2015,1,1))",
+              "type": "calculated"
+            }
+          }
+        ]
+      },
+      {
+        "name": "Page Filters",
+        "annotations": [
+          {
+            "name": "PBI_QueryRelationships",
+            "value": "{\"columnCount\":8,\"keyColumnNames\":[],\"queryRelationships\":[],\"columnIdentities\":[\"Section1/Pages/Added Index.{PageID,10}\",\"Section1/Page Filters/Changed Type.{name,1}\",\"Section1/Page Filters/Changed Type.{Table,2}\",\"Section1/Page Filters/Changed Type.{Col/Measure,3}\",\"Section1/Page Filters/Changed Type.{Filter Type,4}\",\"Section1/Page Filters/Expanded Custom1.{howCreated,5}\",\"Section1/Page Filters/Changed Type.{displayName,6}\",\"Section1/Page Filters/Added Custom1.{Table.Col/Measure,7}\"],\"ColumnCount\":8,\"KeyColumnNames\":[],\"ColumnIdentities\":[\"Section1/Pages/Added Index.{PageID,10}\",\"Section1/Page Filters/Changed Type.{name,1}\",\"Section1/Page Filters/Changed Type.{Table,2}\",\"Section1/Page Filters/Changed Type.{Col/Measure,3}\",\"Section1/Page Filters/Changed Type.{Filter Type,4}\",\"Section1/Page Filters/Expanded Custom1.{howCreated,5}\",\"Section1/Page Filters/Changed Type.{displayName,6}\",\"Section1/Page Filters/Added Custom1.{Table.Col/Measure,7}\"],\"RelationshipInfo\":[]}"
+          },
+          {
+            "name": "PBI_ResultType",
+            "value": "Exception"
+          }
+        ],
+        "columns": [
+          {
+            "name": "Col/Measure",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "6a7320ac-31a0-4c56-a5a8-4aa472848d4b",
+            "sourceColumn": "Col/Measure",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Filter Type",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "91dc1ab3-d155-4c5b-9b98-492a205271df",
+            "sourceColumn": "Filter Type",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "PageID",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              },
+              {
+                "name": "PBI_FormatHint",
+                "value": "{\"isGeneralNumber\":true}"
+              }
+            ],
+            "dataType": "double",
+            "lineageTag": "2d127f47-4fb0-48bb-8dc9-61f0ee7ff8de",
+            "sourceColumn": "PageID",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Table",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "c8c8dda9-9bc6-4fcb-9f5a-b3b0b6112ad4",
+            "sourceColumn": "Table",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Table.Col/Measure",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "changedProperties": [
+              {
+                "property": "IsHidden"
+              }
+            ],
+            "dataType": "string",
+            "isHidden": true,
+            "lineageTag": "01b234d7-0fab-4c43-8d24-81f200daf267",
+            "sourceColumn": "Table.Col/Measure",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "displayName",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "b748cb4c-d6f9-4a01-af4c-c00f9f215011",
+            "sourceColumn": "displayName",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "howCreated",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "d513d0de-3afd-4a73-8cf4-d443d5f2ce4d",
+            "sourceColumn": "howCreated",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "name",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "3170b8d8-c59e-496f-9d9d-f7141bd30b3f",
+            "sourceColumn": "name",
+            "summarizeBy": "none"
+          }
+        ],
+        "lineageTag": "8261c036-524e-43f1-8d70-bbe9439f83ab",
+        "partitions": [
+          {
+            "name": "Page Filters-fae88c35-2a13-4506-9000-e842e462a041",
+            "mode": "import",
+            "queryGroup": "Filters",
+            "source": {
+              "expression": [
+                "let",
+                "    Source = Pages,",
+                "    #\"Removed Other Columns\" = Table.SelectColumns(Source,{\"PageID\", \"filters\"}),",
+                "    #\"Filtered Rows\" = Table.SelectRows(#\"Removed Other Columns\", each ([filters] <> null and [filters] <> \"[]\")),",
+                "    #\"Added Custom\" = Table.AddColumn(#\"Filtered Rows\", \"Custom\", each Json.Document([filters])),",
+                "    #\"Expanded Custom\" = Table.ExpandListColumn(#\"Added Custom\", \"Custom\"),",
+                "    #\"Expanded Custom1\" = Table.ExpandRecordColumn(#\"Expanded Custom\", \"Custom\", {\"name\", \"expression\", \"type\", \"howCreated\", \"displayName\"}, {\"name\", \"expression\", \"type\", \"howCreated\", \"displayName\"}),",
+                "    #\"Expanded expression\" = Table.ExpandRecordColumn(#\"Expanded Custom1\", \"expression\", {\"Column\"}, {\"Column\"}),",
+                "    #\"Expanded Column\" = Table.ExpandRecordColumn(#\"Expanded expression\", \"Column\", {\"Expression\", \"Property\"}, {\"Expression\", \"Property\"}),",
+                "    #\"Expanded Expression\" = Table.ExpandRecordColumn(#\"Expanded Column\", \"Expression\", {\"SourceRef\"}, {\"SourceRef\"}),",
+                "    #\"Expanded SourceRef\" = Table.ExpandRecordColumn(#\"Expanded Expression\", \"SourceRef\", {\"Entity\"}, {\"Entity\"}),",
+                "    #\"Renamed Columns\" = Table.RenameColumns(#\"Expanded SourceRef\",{{\"Entity\", \"Table\"}, {\"Property\", \"Col/Measure\"}, {\"type\", \"Filter Type\"}}),",
+                "    #\"Removed Columns\" = Table.RemoveColumns(#\"Renamed Columns\",{\"filters\"}),",
+                "    #\"Changed Type\" = Table.TransformColumnTypes(#\"Removed Columns\",{{\"name\", type text}, {\"Table\", type text}, {\"Col/Measure\", type text}, {\"Filter Type\", type text}, {\"displayName\", type text}}),",
+                "    #\"Added Custom1\" = Table.AddColumn(#\"Changed Type\", \"Table.Col/Measure\", each [Table] & \".\" & [#\"Col/Measure\"], type text)",
+                "in",
+                "    #\"Added Custom1\""
+              ],
+              "type": "m"
+            }
+          }
+        ]
+      },
+      {
+        "name": "Page Visual Types",
+        "annotations": [
+          {
+            "name": "PBI_QueryRelationships",
+            "value": "{\"columnCount\":5,\"keyColumnNames\":[],\"queryRelationships\":[{\"keyColumnCount\":1,\"keyColumn\":1,\"otherKeyColumnIdentity\":\"Section1/Page Visual type colors/Pivoted Column.{Index,0}\",\"KeyColumnCount\":1}],\"columnIdentities\":[\"Section1/Page Visual Types/Added Index.{Visual Type,0}\",\"Section1/Page Visual Types/Added Index.{Index,1}\",\"Section1/Page Visual type colors/Pivoted Column.{ColorName,1}\",\"Section1/Page Visual type colors/Added Custom1.{foreColor,6}\",\"Section1/Page Visual type colors/Pivoted Column.{hexColor,2}\"],\"ColumnCount\":5,\"KeyColumnNames\":[],\"ColumnIdentities\":[\"Section1/Page Visual Types/Added Index.{Visual Type,0}\",\"Section1/Page Visual Types/Added Index.{Index,1}\",\"Section1/Page Visual type colors/Pivoted Column.{ColorName,1}\",\"Section1/Page Visual type colors/Added Custom1.{foreColor,6}\",\"Section1/Page Visual type colors/Pivoted Column.{hexColor,2}\"],\"RelationshipInfo\":[{\"keyColumnCount\":1,\"keyColumn\":1,\"otherKeyColumnIdentity\":\"Section1/Page Visual type colors/Pivoted Column.{Index,0}\",\"KeyColumnCount\":1}]}"
+          },
+          {
+            "name": "PBI_ResultType",
+            "value": "Exception"
+          }
+        ],
+        "columns": [
+          {
+            "name": "ColorName",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "e3487df2-c2bd-4f87-9ef2-9781a53a3666",
+            "sourceColumn": "ColorName",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Index",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              },
+              {
+                "name": "PBI_FormatHint",
+                "value": "{\"isGeneralNumber\":true}"
+              }
+            ],
+            "changedProperties": [
+              {
+                "property": "IsHidden"
+              }
+            ],
+            "dataType": "double",
+            "isHidden": true,
+            "lineageTag": "7d758d0a-66b8-4be0-baed-9c124951c277",
+            "sourceColumn": "Index",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Visual Type",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "749e8596-67b5-4a69-953a-dcb62e855d90",
+            "sourceColumn": "Visual Type",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "foreColor",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "bb628fa9-9d95-4b3b-9465-4a39d9ab455c",
+            "sourceColumn": "foreColor",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "hexColor",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "4e79e231-fcb7-406e-afe4-4ee363027845",
+            "sourceColumn": "hexColor",
+            "summarizeBy": "none"
+          }
+        ],
+        "lineageTag": "c1c0aa85-8648-47f7-8c56-ca397c5c59ff",
+        "partitions": [
+          {
+            "name": "Page Visual Types-17d8b2c6-04b0-41b1-a074-bcfc3d94be1f",
+            "mode": "import",
+            "queryGroup": "Page Visuals",
+            "source": {
+              "expression": [
+                "let",
+                "    Source = #\"Page Visuals\",",
+                "    #\"Removed Other Columns\" = Table.SelectColumns(Source,{\"Visual Type\"}),",
+                "    #\"Removed Duplicates\" = Table.Distinct(#\"Removed Other Columns\"),",
+                "    #\"Added Index\" = Table.AddIndexColumn(#\"Removed Duplicates\", \"Index\", 1, 1),",
+                "    #\"Merged Queries\" = Table.NestedJoin(#\"Added Index\", {\"Index\"}, #\"Page Visual type colors\", {\"Index\"}, \"visual colors\", JoinKind.LeftOuter),",
+                "    #\"Expanded visual colors\" = Table.ExpandTableColumn(#\"Merged Queries\", \"visual colors\", {\"ColorName\", \"foreColor\", \"hexColor\"}, {\"ColorName\", \"foreColor\", \"hexColor\"})",
+                "in",
+                "    #\"Expanded visual colors\""
+              ],
+              "type": "m"
+            }
+          }
+        ]
+      },
+      {
+        "name": "Page Visuals",
+        "annotations": [
+          {
+            "name": "PBI_QueryRelationships",
+            "value": "{\"columnCount\":25,\"keyColumnNames\":[],\"queryRelationships\":[{\"keyColumnCount\":1,\"keyColumn\":21,\"otherKeyColumnIdentity\":\"Section1/Page Visual actual coordinates/Changed Type3.{PageIDname,0}\",\"KeyColumnCount\":1}],\"columnIdentities\":[\"Section1/Page Visuals/Replaced Value1.{PageID,0}\",\"Section1/Page Visuals/Replaced Value1.{Page Name,1}\",\"Section1/Page Visuals/Replaced Value1.{VisualID,2}\",\"Section1/Page Visuals/Replaced Value1.{pageHeight,3}\",\"Section1/Page Visuals/Replaced Value1.{pageWidth,4}\",\"Section1/Page Visuals/Replaced Value1.{x,5}\",\"Section1/Page Visuals/Replaced Value1.{y,6}\",\"Section1/Page Visuals/Replaced Value1.{z,7}\",\"Section1/Page Visuals/Replaced Value1.{width,8}\",\"Section1/Page Visuals/Replaced Value1.{height,9}\",\"Section1/Page Visuals/Replaced Value1.{config,10}\",\"Section1/Page Visuals/Replaced Value1.{filters,11}\",\"Section1/Page Visuals/Replaced Value1.{tabOrder,12}\",\"Section1/Page Visuals/Replaced Value1.{query,13}\",\"Section1/Page Visuals/Replaced Value1.{dataTransforms,14}\",\"Section1/Page Visuals/Replaced Value1.{name,15}\",\"Section1/Page Visuals/Replaced Value1.{parentName,16}\",\"Section1/Page Visuals/Changed Type4.{Visual Type,17}\",\"Section1/Page Visuals/Replaced Value1.{Selection Pane Name,18}\",\"Section1/Page Visuals/Replaced Value1.{Visual Group Name,19}\",\"Section1/Page Visuals/Replaced Value1.{Visual Group Type,20}\",\"Section1/Page Visuals/Replaced Value1.{PageIDname,21}\",\"Section1/Page Visuals/Replaced Value1.{PageIDparentName,22}\",\"Section1/Page Visual actual coordinates/Grouped Rows1.{x,3}\",\"Section1/Page Visual actual coordinates/Grouped Rows1.{y,4}\"],\"ColumnCount\":25,\"KeyColumnNames\":[],\"ColumnIdentities\":[\"Section1/Page Visuals/Replaced Value1.{PageID,0}\",\"Section1/Page Visuals/Replaced Value1.{Page Name,1}\",\"Section1/Page Visuals/Replaced Value1.{VisualID,2}\",\"Section1/Page Visuals/Replaced Value1.{pageHeight,3}\",\"Section1/Page Visuals/Replaced Value1.{pageWidth,4}\",\"Section1/Page Visuals/Replaced Value1.{x,5}\",\"Section1/Page Visuals/Replaced Value1.{y,6}\",\"Section1/Page Visuals/Replaced Value1.{z,7}\",\"Section1/Page Visuals/Replaced Value1.{width,8}\",\"Section1/Page Visuals/Replaced Value1.{height,9}\",\"Section1/Page Visuals/Replaced Value1.{config,10}\",\"Section1/Page Visuals/Replaced Value1.{filters,11}\",\"Section1/Page Visuals/Replaced Value1.{tabOrder,12}\",\"Section1/Page Visuals/Replaced Value1.{query,13}\",\"Section1/Page Visuals/Replaced Value1.{dataTransforms,14}\",\"Section1/Page Visuals/Replaced Value1.{name,15}\",\"Section1/Page Visuals/Replaced Value1.{parentName,16}\",\"Section1/Page Visuals/Changed Type4.{Visual Type,17}\",\"Section1/Page Visuals/Replaced Value1.{Selection Pane Name,18}\",\"Section1/Page Visuals/Replaced Value1.{Visual Group Name,19}\",\"Section1/Page Visuals/Replaced Value1.{Visual Group Type,20}\",\"Section1/Page Visuals/Replaced Value1.{PageIDname,21}\",\"Section1/Page Visuals/Replaced Value1.{PageIDparentName,22}\",\"Section1/Page Visual actual coordinates/Grouped Rows1.{x,3}\",\"Section1/Page Visual actual coordinates/Grouped Rows1.{y,4}\"],\"RelationshipInfo\":[{\"keyColumnCount\":1,\"keyColumn\":21,\"otherKeyColumnIdentity\":\"Section1/Page Visual actual coordinates/Changed Type3.{PageIDname,0}\",\"KeyColumnCount\":1}]}"
+          },
+          {
+            "name": "PBI_ResultType",
+            "value": "Exception"
+          }
+        ],
+        "columns": [
+          {
+            "name": "Page Name",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "c0aa3408-5a87-442f-9e5a-89399f04e5bd",
+            "sourceColumn": "Page Name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "PageID",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              },
+              {
+                "name": "PBI_FormatHint",
+                "value": "{\"isGeneralNumber\":true}"
+              }
+            ],
+            "changedProperties": [
+              {
+                "property": "IsHidden"
+              }
+            ],
+            "dataType": "double",
+            "isHidden": true,
+            "lineageTag": "8e6479cc-4488-4b97-b037-d8cf3b360bdf",
+            "sourceColumn": "PageID",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "PageIDname",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "changedProperties": [
+              {
+                "property": "IsHidden"
+              }
+            ],
+            "dataType": "string",
+            "isHidden": true,
+            "lineageTag": "daf96178-43bb-45d5-aaf7-abc78a593cbe",
+            "sourceColumn": "PageIDname",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "PageIDparentName",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "changedProperties": [
+              {
+                "property": "IsHidden"
+              }
+            ],
+            "dataType": "string",
+            "isHidden": true,
+            "lineageTag": "26b63b91-a342-4380-a41e-8b28b709e8f7",
+            "sourceColumn": "PageIDparentName",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Selection Pane Name",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "2210e6d3-dc6f-448a-be56-20f400f5c0d0",
+            "sourceColumn": "Selection Pane Name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Visual Group Name",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "b5423b2a-1d5e-4cc0-a2fc-d4c7789cc50c",
+            "sourceColumn": "Visual Group Name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Visual Group Type",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "954b37f5-1050-46cd-a26d-7822def5dbdd",
+            "sourceColumn": "Visual Group Type",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Visual Type",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "af05489b-ee29-4164-9e23-37bfed0cb93a",
+            "sourceColumn": "Visual Type",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "VisualID",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              },
+              {
+                "name": "PBI_FormatHint",
+                "value": "{\"isGeneralNumber\":true}"
+              }
+            ],
+            "changedProperties": [
+              {
+                "property": "IsHidden"
+              }
+            ],
+            "dataType": "double",
+            "isHidden": true,
+            "lineageTag": "034649df-5b36-47e4-8490-ec88b73bd11f",
+            "sourceColumn": "VisualID",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "actual x",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              },
+              {
+                "name": "PBI_FormatHint",
+                "value": "{\"isGeneralNumber\":true}"
+              }
+            ],
+            "dataType": "double",
+            "lineageTag": "7529b1e4-f053-47b3-b1bb-af66f3c8d31b",
+            "sourceColumn": "actual x",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "actual y",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              },
+              {
+                "name": "PBI_FormatHint",
+                "value": "{\"isGeneralNumber\":true}"
+              }
+            ],
+            "dataType": "double",
+            "lineageTag": "4cdd2778-2840-4765-9749-8940cca3b733",
+            "sourceColumn": "actual y",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "config",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "changedProperties": [
+              {
+                "property": "IsHidden"
+              }
+            ],
+            "dataType": "string",
+            "isHidden": true,
+            "lineageTag": "507e7267-2464-4fe1-a3d1-6535a0ff4628",
+            "sourceColumn": "config",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "dataTransforms",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "changedProperties": [
+              {
+                "property": "IsHidden"
+              }
+            ],
+            "dataType": "string",
+            "isHidden": true,
+            "lineageTag": "4e2a9a38-cada-4e2c-bff4-575a6427368a",
+            "sourceColumn": "dataTransforms",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "filters",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "changedProperties": [
+              {
+                "property": "IsHidden"
+              }
+            ],
+            "dataType": "string",
+            "isHidden": true,
+            "lineageTag": "c8721e2d-76cb-459a-b293-b50ab3e331b2",
+            "sourceColumn": "filters",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "height",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              },
+              {
+                "name": "PBI_FormatHint",
+                "value": "{\"isGeneralNumber\":true}"
+              }
+            ],
+            "dataType": "double",
+            "lineageTag": "8be99921-9ad8-4ef7-9060-cc27f5c67b0c",
+            "sourceColumn": "height",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "name",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "45fab941-fb64-4e62-bb39-9c76cea9cefd",
+            "sourceColumn": "name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "pageHeight",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              },
+              {
+                "name": "PBI_FormatHint",
+                "value": "{\"isGeneralNumber\":true}"
+              }
+            ],
+            "dataType": "double",
+            "lineageTag": "d0830a54-ade6-4803-8f97-cea59cab64fe",
+            "sourceColumn": "pageHeight",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "pageWidth",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              },
+              {
+                "name": "PBI_FormatHint",
+                "value": "{\"isGeneralNumber\":true}"
+              }
+            ],
+            "dataType": "double",
+            "lineageTag": "d6e7898f-a9c9-4684-a243-09b76e8ad8e3",
+            "sourceColumn": "pageWidth",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "parentName",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "e6fa4340-9d68-4adc-976f-113755e699a2",
+            "sourceColumn": "parentName",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "query",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "84c38093-e922-4113-998b-9c38fe2ee6d0",
+            "sourceColumn": "query",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "tabOrder",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "changedProperties": [
+              {
+                "property": "IsHidden"
+              }
+            ],
+            "dataType": "string",
+            "isHidden": true,
+            "lineageTag": "66f407d8-a564-428f-bfaa-29102b908d4e",
+            "sourceColumn": "tabOrder",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "width",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              },
+              {
+                "name": "PBI_FormatHint",
+                "value": "{\"isGeneralNumber\":true}"
+              }
+            ],
+            "dataType": "double",
+            "lineageTag": "6eca251d-97a2-4224-83e2-24a37ff54959",
+            "sourceColumn": "width",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "x",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              },
+              {
+                "name": "PBI_FormatHint",
+                "value": "{\"isGeneralNumber\":true}"
+              }
+            ],
+            "changedProperties": [
+              {
+                "property": "IsHidden"
+              }
+            ],
+            "dataType": "double",
+            "isHidden": true,
+            "lineageTag": "78627353-0aa4-46dd-aa62-d15ecef5944e",
+            "sourceColumn": "x",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "y",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              },
+              {
+                "name": "PBI_FormatHint",
+                "value": "{\"isGeneralNumber\":true}"
+              }
+            ],
+            "changedProperties": [
+              {
+                "property": "IsHidden"
+              }
+            ],
+            "dataType": "double",
+            "isHidden": true,
+            "lineageTag": "4fb6d717-a8f5-44fc-9936-813c796f5c48",
+            "sourceColumn": "y",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "z",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              },
+              {
+                "name": "PBI_FormatHint",
+                "value": "{\"isGeneralNumber\":true}"
+              }
+            ],
+            "changedProperties": [
+              {
+                "property": "IsHidden"
+              }
+            ],
+            "dataType": "double",
+            "isHidden": true,
+            "lineageTag": "b677259b-cdd2-4977-9e6a-f7eddef88177",
+            "sourceColumn": "z",
+            "summarizeBy": "sum"
+          }
+        ],
+        "lineageTag": "a4b53813-cadb-4866-93fc-943e8b040103",
+        "partitions": [
+          {
+            "name": "Page Visuals-67fd3af8-298c-4c6e-bf86-b58e5cf6cd4a",
+            "mode": "import",
+            "queryGroup": "Page Visuals",
+            "source": {
+              "expression": [
+                "let",
+                "    /*Source = Pages,",
+                "    #\"Removed Other Columns\" = Table.SelectColumns(Source,{\"PageID\", \"Page Name\", \"visualContainers\", \"height\", \"width\"}),",
+                "    #\"Expanded visualContainers\" = Table.ExpandListColumn(#\"Removed Other Columns\", \"visualContainers\"),",
+                "    #\"Added Index\" = Table.AddIndexColumn(#\"Expanded visualContainers\", \"VisualID\", 1, 1),",
+                "    #\"Reordered Columns\" = Table.ReorderColumns(#\"Added Index\",{\"PageID\", \"VisualID\", \"visualContainers\"}),",
+                "    #\"Renamed Columns\" = Table.RenameColumns(#\"Reordered Columns\",{{\"height\", \"pageHeight\"}, {\"width\", \"pageWidth\"}}),",
+                "    #\"Expanded visualContainers1\" = Table.ExpandRecordColumn(#\"Renamed Columns\", \"visualContainers\", {\"x\", \"y\", \"z\", \"width\", \"height\", \"config\", \"filters\", \"tabOrder\", \"query\", \"dataTransforms\"}, {\"x\", \"y\", \"z\", \"width\", \"height\", \"config\", \"filters\", \"tabOrder\", \"query\", \"dataTransforms\"}),",
+                "    #\"Filtered Rows\" = Table.SelectRows(#\"Expanded visualContainers1\", each ([config] <> null)),",
+                "    #\"Changed Type\" = Table.TransformColumnTypes(#\"Filtered Rows\",{{\"config\", type text}}),",
+                "    #\"Added config json\" = Table.AddColumn(#\"Changed Type\", \"config json\", each Json.Document([config])),",
+                "    #\"Expanded config json\" = Table.ExpandRecordColumn(#\"Added config json\", \"config json\", {\"name\", \"parentGroupName\", \"singleVisual\", \"singleVisualGroup\"}, {\"name\", \"parentName\", \"singleVisual\", \"singleVisualGroup\"}),",
+                "    #\"Expanded singleVisual\" = Table.ExpandRecordColumn(#\"Expanded config json\", \"singleVisual\", {\"visualType\", \"vcObjects\"}, {\"singleVisual.visualType\", \"singleVisual.vcObjects\"}),",
+                "    #\"Changed Type1\" = Table.TransformColumnTypes(#\"Expanded singleVisual\",{{\"pageHeight\", type number}, {\"x\", type number}, {\"y\", type number}, {\"width\", type number}, {\"height\", type number}, {\"z\", type number}, {\"singleVisual.visualType\", type text}, {\"pageWidth\", type number}, {\"Page Name\", type text}}),",
+                "    */",
+                "    Source = #\"Page Visuals starter\",",
+                "    #\"Expanded singleVisual.vcObjects\" = Table.ExpandRecordColumn(Source, \"singleVisual.vcObjects\", {\"title\"}, {\"singleVisual.vcObjects.title\"}),",
+                "    #\"Expanded singleVisual.vcObjects.title\" = Table.ExpandListColumn(#\"Expanded singleVisual.vcObjects\", \"singleVisual.vcObjects.title\"),",
+                "    #\"Expanded singleVisual.vcObjects.title1\" = Table.ExpandRecordColumn(#\"Expanded singleVisual.vcObjects.title\", \"singleVisual.vcObjects.title\", {\"properties\"}, {\"singleVisual.vcObjects.title.properties\"}),",
+                "    #\"Expanded singleVisual.vcObjects.title.properties\" = Table.ExpandRecordColumn(#\"Expanded singleVisual.vcObjects.title1\", \"singleVisual.vcObjects.title.properties\", {\"text\"}, {\"singleVisual.vcObjects.title.properties.text\"}),",
+                "    #\"Expanded singleVisual.vcObjects.title.properties.text\" = Table.ExpandRecordColumn(#\"Expanded singleVisual.vcObjects.title.properties\", \"singleVisual.vcObjects.title.properties.text\", {\"expr\"}, {\"singleVisual.vcObjects.title.properties.text.expr\"}),",
+                "    #\"Expanded singleVisual.vcObjects.title.properties.text.expr\" = Table.ExpandRecordColumn(#\"Expanded singleVisual.vcObjects.title.properties.text\", \"singleVisual.vcObjects.title.properties.text.expr\", {\"Literal\"}, {\"singleVisual.vcObjects.title.properties.text.expr.Literal\"}),",
+                "    #\"Expanded singleVisual.vcObjects.title.properties.text.expr.Literal\" = Table.ExpandRecordColumn(#\"Expanded singleVisual.vcObjects.title.properties.text.expr\", \"singleVisual.vcObjects.title.properties.text.expr.Literal\", {\"Value\"}, {\"singleVisual.vcObjects.title.properties.text.expr.Literal.Value\"}),",
+                "    #\"Renamed Columns1\" = Table.RenameColumns(#\"Expanded singleVisual.vcObjects.title.properties.text.expr.Literal\",{{\"singleVisual.vcObjects.title.properties.text.expr.Literal.Value\", \"Selection Pane Name\"}}),",
+                "    #\"Changed Type2\" = Table.TransformColumnTypes(#\"Renamed Columns1\",{{\"Selection Pane Name\", type text}, {\"name\", type text}}),",
+                "    #\"Replaced Value\" = Table.ReplaceValue(#\"Changed Type2\", each [Selection Pane Name], each if [Selection Pane Name] = null then [name] else [Selection Pane Name],Replacer.ReplaceValue,{\"Selection Pane Name\"}),",
+                "    #\"Renamed Columns2\" = Table.RenameColumns(#\"Replaced Value\",{{\"singleVisual.visualType\", \"Visual Type\"}}),",
+                "    #\"Expanded singleVisualGroup\" = Table.ExpandRecordColumn(#\"Renamed Columns2\", \"singleVisualGroup\", {\"displayName\", \"groupMode\"}, {\"Visual Group Name\", \"Visual Group Type\"}),",
+                "    #\"Changed Type3\" = Table.TransformColumnTypes(#\"Expanded singleVisualGroup\",{{\"Selection Pane Name\", type text}, {\"Visual Group Name\", type text}, {\"Visual Group Type\", type text}, {\"parentName\", type text}}),",
+                "    #\"Replaced Value1\" = Table.ReplaceValue(#\"Changed Type3\", each [Visual Type], each if ([Visual Type] = null and [Visual Group Name] <> null) then \"visual group\" else [Visual Type],Replacer.ReplaceValue,{\"Visual Type\"}),",
+                "    #\"Changed Type4\" = Table.TransformColumnTypes(#\"Replaced Value1\",{{\"Visual Type\", type text}}),",
+                "    #\"Merged Queries\" = Table.NestedJoin(#\"Changed Type4\", {\"PageIDname\"}, #\"Page Visual actual coordinates\", {\"PageIDname\"}, \"Page Visual actual coordinates\", JoinKind.LeftOuter),",
+                "    #\"Expanded Page Visual actual coordinates\" = Table.ExpandTableColumn(#\"Merged Queries\", \"Page Visual actual coordinates\", {\"x\", \"y\"}, {\"actual x\", \"actual y\"})/*,",
+                "    #\"Inserted Merged Column\" = Table.AddColumn(#\"Changed Type4\", \"PageIDname\", each Text.Combine({Text.From([PageID], \"en-US\"), \"_\", [name]}), type text),",
+                "    #\"Added Conditional Column\" = Table.AddColumn(#\"Inserted Merged Column\", \"PageIDparentName\", each if [parentName] = null then null else Text.From([PageID]) & \"_\" & [parentName], type text)",
+                "*/",
+                "in",
+                "    #\"Expanded Page Visual actual coordinates\""
+              ],
+              "type": "m"
+            }
+          }
+        ]
+      },
+      {
+        "name": "Page Visuals Data Elements",
+        "annotations": [
+          {
+            "name": "PBI_QueryRelationships",
+            "value": "{\"columnCount\":8,\"keyColumnNames\":[],\"queryRelationships\":[],\"columnIdentities\":[\"Section1/Page Visuals Data Elements/Appended Query.{VisualID,0}\",\"Section1/Page Visuals Data Elements/Appended Query.{QueryRefType,1}\",\"Section1/Page Visuals Data Elements/Appended Query.{Table,2}\",\"Section1/Page Visuals Data Elements/Appended Query.{Col/Measure,3}\",\"Section1/Page Visuals Data Elements/Appended Query.{Query,4}\",\"Section1/Page Visuals Data Elements/Appended Query.{type,5}\",\"Section1/Page Visuals Data Elements/Appended Query.{howCreated,6}\",\"Section1/Page Visuals Data Elements/Added Custom.{Table.Col/Measure,7}\"],\"ColumnCount\":8,\"KeyColumnNames\":[],\"ColumnIdentities\":[\"Section1/Page Visuals Data Elements/Appended Query.{VisualID,0}\",\"Section1/Page Visuals Data Elements/Appended Query.{QueryRefType,1}\",\"Section1/Page Visuals Data Elements/Appended Query.{Table,2}\",\"Section1/Page Visuals Data Elements/Appended Query.{Col/Measure,3}\",\"Section1/Page Visuals Data Elements/Appended Query.{Query,4}\",\"Section1/Page Visuals Data Elements/Appended Query.{type,5}\",\"Section1/Page Visuals Data Elements/Appended Query.{howCreated,6}\",\"Section1/Page Visuals Data Elements/Added Custom.{Table.Col/Measure,7}\"],\"RelationshipInfo\":[]}"
+          },
+          {
+            "name": "PBI_ResultType",
+            "value": "Exception"
+          }
+        ],
+        "columns": [
+          {
+            "name": "Col/Measure",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "2815bb17-2347-4e33-afe9-6eb8710dd649",
+            "sourceColumn": "Col/Measure",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Filter Type",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "03589dc7-4513-4191-b87a-b16d824d3039",
+            "sourceColumn": "Filter Type",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Filter howCreated",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "9f569c8d-2119-4b9f-bbcf-e4ad122c8570",
+            "sourceColumn": "Filter howCreated",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Query",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "c013e6c3-3c34-48b1-a25a-147808688253",
+            "sourceColumn": "Query",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "QueryRefType",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "1a51b4aa-40f4-4e90-a61b-5daa163fa2eb",
+            "sourceColumn": "QueryRefType",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Table",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "0f52adb8-cf59-455e-a207-b232441ccd54",
+            "sourceColumn": "Table",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Table.Col/Measure",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "changedProperties": [
+              {
+                "property": "IsHidden"
+              }
+            ],
+            "dataType": "string",
+            "isHidden": true,
+            "lineageTag": "17fe1c92-aa5b-4892-910f-c6ba43af8e7f",
+            "sourceColumn": "Table.Col/Measure",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "VisualID",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              },
+              {
+                "name": "PBI_FormatHint",
+                "value": "{\"isGeneralNumber\":true}"
+              }
+            ],
+            "changedProperties": [
+              {
+                "property": "IsHidden"
+              }
+            ],
+            "dataType": "double",
+            "isHidden": true,
+            "lineageTag": "704394f9-1a5e-4c7f-a1e8-4f87d483db4e",
+            "sourceColumn": "VisualID",
+            "summarizeBy": "none"
+          }
+        ],
+        "lineageTag": "e14d7340-3d52-49fb-914d-d0e2c7eee901",
+        "partitions": [
+          {
+            "name": "Page Visuals Data Elements-4ae4eab1-a4ac-4ce3-b4fb-7d265bbbb498",
+            "mode": "import",
+            "queryGroup": "Page Visuals",
+            "source": {
+              "expression": [
+                "let",
+                "    Source = #\"Page Visuals\",",
+                "    #\"Removed Other Columns\" = Table.SelectColumns(Source,{\"VisualID\", \"config\"}),",
+                "    #\"Added configLength\" = Table.AddColumn(#\"Removed Other Columns\", \"configLength\", each Text.Length([config])),",
+                "    #\"Added PositionOfQueryRef\" = Table.AddColumn(#\"Added configLength\", \"PositionOfQueryRef\", each Text.PositionOf([config], \":[{\"\"queryRef\"\"\", Occurrence.All)),",
+                "    #\"Expanded PositionOfQueryRef\" = Table.ExpandListColumn(#\"Added PositionOfQueryRef\", \"PositionOfQueryRef\"),",
+                "    #\"Filtered PositionOfQueryRef not null\" = Table.SelectRows(#\"Expanded PositionOfQueryRef\", each ([PositionOfQueryRef] <> null)),",
+                "    #\"Added ReversedPiece\" = Table.AddColumn(#\"Filtered PositionOfQueryRef not null\", \"ReversedPiece\", each if [PositionOfQueryRef] is null",
+                "then null",
+                "else Text.Middle(Text.Reverse(Text.Start([config], [PositionOfQueryRef])), 1, Text.Length([config]) - 1)),",
+                "    #\"Added QueryRefType\" = Table.AddColumn(#\"Added ReversedPiece\", \"QueryRefType\", each if [PositionOfQueryRef] = null then null",
+                "else Text.Reverse(Text.Start([ReversedPiece], Text.PositionOf([ReversedPiece], \"\"\"\"))), type text),",
+                "    #\"Removed ReversedPiece\" = Table.RemoveColumns(#\"Added QueryRefType\",{\"ReversedPiece\"}),",
+                "    #\"Added Custom4\" = Table.AddColumn(#\"Removed ReversedPiece\", \"Custom\", each if [PositionOfQueryRef] = null then null",
+                "else Text.End([config], [configLength] - [PositionOfQueryRef])),",
+                "    #\"Split Column by Delimiter\" = Table.ExpandListColumn(Table.TransformColumns(#\"Added Custom4\", {{\"Custom\", Splitter.SplitTextByDelimiter(\"{\"\"queryRef\"\":\"\"\", QuoteStyle.None), let itemType = (type nullable text) meta [Serialized.Text = true] in type {itemType}}}), \"Custom\"),",
+                "    #\"Filtered Rows\" = Table.SelectRows(#\"Split Column by Delimiter\", each ([Custom] <> \":[\")),",
+                "    #\"Changed Type\" = Table.TransformColumnTypes(#\"Filtered Rows\",{{\"Custom\", type text}}),",
+                "    #\"Added Col or Measure\" = Table.AddColumn(#\"Changed Type\", \"Col/Measure\", each if [PositionOfQueryRef] = null then null",
+                "else Text.Start([Custom], Text.PositionOf([Custom], \"\"\"\")), type text),",
+                "    #\"Duplicated Column\" = Table.DuplicateColumn(#\"Added Col or Measure\", \"Col/Measure\", \"Query\"),",
+                "    #\"Split Column by Delimiter2\" = Table.ExpandListColumn(Table.TransformColumns(#\"Duplicated Column\", {{\"Col/Measure\", Splitter.SplitTextByDelimiter(\",\", QuoteStyle.Csv), let itemType = (type nullable text) meta [Serialized.Text = true] in type {itemType}}}), \"Col/Measure\"),",
+                "    #\"Trimmed Text\" = Table.TransformColumns(#\"Split Column by Delimiter2\",{{\"Col/Measure\", Text.Trim, type text}}),",
+                "    #\"Split Column by Delimiter1\" = Table.SplitColumn(#\"Trimmed Text\", \"Col/Measure\", Splitter.SplitTextByEachDelimiter({\".\"}, QuoteStyle.Csv, false), {\"Table\", \"Col/Measure\"}),",
+                "    #\"Added Custom6\" = Table.AddColumn(#\"Split Column by Delimiter1\", \"Custom.1\", each if Text.PositionOf(Text.Reverse([Table]), \"(\") > 0",
+                "then Text.Reverse(Text.Start(Text.Reverse([Table]), Text.PositionOf(Text.Reverse([Table]), \"(\")))",
+                "else [Table]),",
+                "    #\"Replaced Value\" = Table.FromRecords(Table.TransformRows(#\"Added Custom6\", (row) => Record.TransformFields( row, { \"Table\", each row[Custom.1]} ))),",
+                "    #\"Changed Type1\" = Table.TransformColumnTypes(#\"Replaced Value\",{{\"Table\", type text}, {\"Col/Measure\", type text}}),",
+                "    #\"Removed Columns1\" = Table.RemoveColumns(#\"Changed Type1\",{\"configLength\", \"PositionOfQueryRef\", \"Custom\", \"config\", \"Custom.1\"}),",
+                "    #\"Split Column by Delimiter3\" = Table.SplitColumn(#\"Removed Columns1\", \"Col/Measure\", Splitter.SplitTextByEachDelimiter({\")\"}, QuoteStyle.Csv, false), {\"Col/Measure\", \"Col/Measure.2\"}),",
+                "    #\"Changed Type2\" = Table.TransformColumnTypes(#\"Split Column by Delimiter3\",{{\"Col/Measure\", type text}, {\"Col/Measure.2\", type text}, {\"VisualID\", Int64.Type}, {\"QueryRefType\", type text}, {\"Query\", type text}}),",
+                "    #\"Removed Columns2\" = Table.RemoveColumns(#\"Changed Type2\",{\"Col/Measure.2\"}),",
+                "    #\"Filtered Rows2\" = Table.SelectRows(#\"Removed Columns2\", each ([#\"Col/Measure\"] <> null)),",
+                "    #\"Removed Duplicates\" = Table.Distinct(#\"Filtered Rows2\"),",
+                "    #\"Appended Query\" = Table.Combine({#\"Removed Duplicates\", #\"Page Visual Filters\"}),",
+                "    #\"Sorted Rows\" = Table.Sort(#\"Appended Query\",{{\"VisualID\", Order.Ascending}}),",
+                "    #\"Renamed Columns\" = Table.RenameColumns(#\"Sorted Rows\",{{\"type\", \"Filter Type\"}, {\"howCreated\", \"Filter howCreated\"}}),",
+                "    #\"Added Custom\" = Table.AddColumn(#\"Renamed Columns\", \"Table.Col/Measure\", each [Table] & \".\" & [#\"Col/Measure\"], type text)",
+                "in",
+                "    #\"Added Custom\""
+              ],
+              "type": "m"
+            }
+          }
+        ]
+      },
+      {
+        "name": "Pages",
+        "annotations": [
+          {
+            "name": "PBI_QueryRelationships",
+            "value": "{\"columnCount\":11,\"keyColumnNames\":[],\"queryRelationships\":[],\"columnIdentities\":[\"Section1/Pages/Added Index.{ReportName,0}\",\"Section1/Pages/Added Index.{PageID,10}\",\"Section1/Pages/Changed Type.{name,2}\",\"Section1/Pages/Changed Type.{displayName,3}\",\"Section1/Pages/Changed Type.{filters,4}\",\"Section1/Pages/Changed Type.{ordinal,5}\",\"Section1/Pages/Added Index.{visualContainers,5}\",\"Section1/Pages/Changed Type.{config,7}\",\"Section1/Pages/Changed Type.{displayOption,8}\",\"Section1/Pages/Changed Type.{width,9}\",\"Section1/Pages/Changed Type.{height,10}\"],\"ColumnCount\":11,\"KeyColumnNames\":[],\"ColumnIdentities\":[\"Section1/Pages/Added Index.{ReportName,0}\",\"Section1/Pages/Added Index.{PageID,10}\",\"Section1/Pages/Changed Type.{name,2}\",\"Section1/Pages/Changed Type.{displayName,3}\",\"Section1/Pages/Changed Type.{filters,4}\",\"Section1/Pages/Changed Type.{ordinal,5}\",\"Section1/Pages/Added Index.{visualContainers,5}\",\"Section1/Pages/Changed Type.{config,7}\",\"Section1/Pages/Changed Type.{displayOption,8}\",\"Section1/Pages/Changed Type.{width,9}\",\"Section1/Pages/Changed Type.{height,10}\"],\"RelationshipInfo\":[]}"
+          },
+          {
+            "name": "PBI_ResultType",
+            "value": "Exception"
+          }
+        ],
+        "columns": [
+          {
+            "name": "Page Info",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "expression": "\"Page: \" & 'Pages'[Page Name] & \" (width: \" & 'Pages'[width] & \", height: \" & 'Pages'[height] & \")\"",
+            "isDataTypeInferred": true,
+            "lineageTag": "3fa863f4-d00a-470d-a046-683c974b03a0",
+            "summarizeBy": "none",
+            "type": "calculated"
+          },
+          {
+            "name": "Page Name",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "dc935837-5f7f-4e0f-a707-3c8551e78c41",
+            "sortByColumn": "ordinal",
+            "sourceColumn": "Page Name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "PageID",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              },
+              {
+                "name": "PBI_FormatHint",
+                "value": "{\"isGeneralNumber\":true}"
+              }
+            ],
+            "changedProperties": [
+              {
+                "property": "IsHidden"
+              }
+            ],
+            "dataType": "double",
+            "isHidden": true,
+            "lineageTag": "a0726ad4-ff74-4a6c-99bf-8064589fa2a7",
+            "sourceColumn": "PageID",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "ReportName",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "b47f0618-0ed4-4719-98ac-f0fd3377c85e",
+            "sourceColumn": "ReportName",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "config",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "changedProperties": [
+              {
+                "property": "IsHidden"
+              }
+            ],
+            "dataType": "string",
+            "isHidden": true,
+            "lineageTag": "20c16b91-854e-44dc-85dd-5419712c55b3",
+            "sourceColumn": "config",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "displayOption",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "int64",
+            "formatString": "0",
+            "lineageTag": "d672ede6-624b-45af-83c6-c6a1b414d107",
+            "sourceColumn": "displayOption",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "filters",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "changedProperties": [
+              {
+                "property": "IsHidden"
+              }
+            ],
+            "dataType": "string",
+            "isHidden": true,
+            "lineageTag": "621b35b4-4fbe-44c0-933f-b9cdd40be447",
+            "sourceColumn": "filters",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "height",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              },
+              {
+                "name": "PBI_FormatHint",
+                "value": "{\"isDecimal\":true}"
+              }
+            ],
+            "dataType": "double",
+            "formatString": "0",
+            "lineageTag": "e465ce47-86fc-494d-9ff7-69f20b9e301c",
+            "sourceColumn": "height",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "name",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "changedProperties": [
+              {
+                "property": "IsHidden"
+              }
+            ],
+            "dataType": "string",
+            "isHidden": true,
+            "lineageTag": "e758f65b-d359-4ec1-947d-d992b48a6b58",
+            "sourceColumn": "name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "ordinal",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "int64",
+            "formatString": "0",
+            "lineageTag": "9b5e108c-c56b-4d1e-b1f5-31805e944a2e",
+            "sourceColumn": "ordinal",
+            "summarizeBy": "sum"
+          },
+          {
+            "name": "visualContainers",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "changedProperties": [
+              {
+                "property": "IsHidden"
+              }
+            ],
+            "dataType": "string",
+            "isHidden": true,
+            "lineageTag": "56a2c143-f2de-42f1-9022-80ba45143742",
+            "sourceColumn": "visualContainers",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "width",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              },
+              {
+                "name": "PBI_FormatHint",
+                "value": "{\"isDecimal\":true}"
+              }
+            ],
+            "dataType": "double",
+            "formatString": "0",
+            "lineageTag": "fab939c6-54b9-48cb-8b02-94ee8f317732",
+            "sourceColumn": "width",
+            "summarizeBy": "sum"
+          }
+        ],
+        "lineageTag": "31275bc2-075d-4c11-b88c-84f6da48096f",
+        "partitions": [
+          {
+            "name": "Pages-5fa038a8-403a-4327-9fb3-565dee025537",
+            "mode": "import",
+            "queryGroup": "Report Layout",
+            "source": {
+              "expression": [
+                "let",
+                "    Source = #\"Report Layout\",",
+                "    #\"Removed Other Columns\" = Table.SelectColumns(Source,{\"ReportName\", \"sections\"}),",
+                "    #\"Expanded sections\" = Table.ExpandListColumn(#\"Removed Other Columns\", \"sections\"),",
+                "",
+                "",
+                "/*",
+                "let",
+                "    Source = document,",
+                "    #\"Filtered Rows\" = Table.SelectRows(Source, each ([Name] = \"sections\")),",
+                "    #\"Removed Columns\" = Table.RemoveColumns(#\"Filtered Rows\",{\"Name\"}),",
+                "    #\"Expanded sections\" = Table.ExpandListColumn(#\"Removed Columns\", \"sections\"),*/",
+                "    #\"Expanded Value1\" = Table.ExpandRecordColumn(#\"Expanded sections\", \"sections\", {\"name\", \"displayName\", \"filters\", \"ordinal\", \"visualContainers\", \"config\", \"displayOption\", \"width\", \"height\"}, {\"name\", \"displayName\", \"filters\", \"ordinal\", \"visualContainers\", \"config\", \"displayOption\", \"width\", \"height\"}),",
+                "    #\"Added Index\" = Table.AddIndexColumn(#\"Expanded Value1\", \"PageID\", 1, 1),",
+                "    #\"Reordered Columns\" = Table.ReorderColumns(#\"Added Index\",{\"PageID\", \"name\", \"displayName\", \"filters\", \"ordinal\", \"visualContainers\", \"config\", \"displayOption\", \"width\", \"height\"}),",
+                "    #\"Changed Type\" = Table.TransformColumnTypes(#\"Reordered Columns\",{{\"ordinal\", Int64.Type}, {\"name\", type text}, {\"displayName\", type text}, {\"filters\", type text}, {\"config\", type text}, {\"height\", type number}, {\"width\", type number}, {\"displayOption\", Int64.Type}}),",
+                "    #\"Renamed Columns\" = Table.RenameColumns(#\"Changed Type\",{{\"displayName\", \"Page Name\"}})",
+                "in",
+                "    #\"Renamed Columns\""
+              ],
+              "type": "m"
+            }
+          }
+        ]
+      },
+      {
+        "name": "Report Filters",
+        "annotations": [
+          {
+            "name": "PBI_QueryRelationships",
+            "value": "{\"columnCount\":6,\"keyColumnNames\":[],\"queryRelationships\":[],\"columnIdentities\":[\"Section1/Report Filters/Changed Type.{name,0}\",\"Section1/Report Filters/Changed Type.{Table,1}\",\"Section1/Report Filters/Changed Type.{Col/Measure,2}\",\"Section1/Report Filters/Changed Type.{Filter Type,3}\",\"Section1/Report Filters/Expanded Custom1.{howCreated,4}\",\"Section1/Report Filters/Added Custom1.{Table.Col/Measure,5}\"],\"ColumnCount\":6,\"KeyColumnNames\":[],\"ColumnIdentities\":[\"Section1/Report Filters/Changed Type.{name,0}\",\"Section1/Report Filters/Changed Type.{Table,1}\",\"Section1/Report Filters/Changed Type.{Col/Measure,2}\",\"Section1/Report Filters/Changed Type.{Filter Type,3}\",\"Section1/Report Filters/Expanded Custom1.{howCreated,4}\",\"Section1/Report Filters/Added Custom1.{Table.Col/Measure,5}\"],\"RelationshipInfo\":[]}"
+          },
+          {
+            "name": "PBI_ResultType",
+            "value": "Table"
+          }
+        ],
+        "columns": [
+          {
+            "name": "Col/Measure",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "35e70c1f-c451-45e9-b648-48baecca3b25",
+            "sourceColumn": "Col/Measure",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Filter Type",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "6c73347d-0487-4a82-b547-eac64dd1b2f7",
+            "sourceColumn": "Filter Type",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Table",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "2ace2cf2-5016-40fb-8259-c1d4c0fb24aa",
+            "sourceColumn": "Table",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Table.Col/Measure",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "changedProperties": [
+              {
+                "property": "IsHidden"
+              }
+            ],
+            "dataType": "string",
+            "isHidden": true,
+            "lineageTag": "010f4081-142a-4e18-9ca3-8f833debe8e5",
+            "sourceColumn": "Table.Col/Measure",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "howCreated",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "d08843b9-2145-4e6c-bd59-0c693827da38",
+            "sourceColumn": "howCreated",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "name",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "465a7d4d-570b-44dc-a680-5f84608c1e07",
+            "sourceColumn": "name",
+            "summarizeBy": "none"
+          }
+        ],
+        "lineageTag": "3bc4b437-4f03-4611-90c5-c0555ec6ec89",
+        "partitions": [
+          {
+            "name": "Report Filters-db302178-f2f1-4b53-97c3-1d5af892ce8b",
+            "mode": "import",
+            "queryGroup": "Filters",
+            "source": {
+              "expression": [
+                "let",
+                "    Source = #\"Report Layout\",",
+                "    #\"Removed Other Columns\" = Table.SelectColumns(Source,{\"filters\"}),",
+                "    #\"Filtered Rows\" = Table.SelectRows(#\"Removed Other Columns\", each ([filters] <> null)),",
+                "    #\"Added Custom\" = Table.AddColumn(#\"Filtered Rows\", \"Custom\", each if [filters] = null then null else Json.Document([filters])),",
+                "    #\"Expanded Custom\" = Table.ExpandListColumn(#\"Added Custom\", \"Custom\"),",
+                "    #\"Expanded Custom1\" = Table.ExpandRecordColumn(#\"Expanded Custom\", \"Custom\", {\"name\", \"expression\", \"type\", \"howCreated\"}, {\"name\", \"expression\", \"type\", \"howCreated\"}),",
+                "    #\"Expanded expression\" = Table.ExpandRecordColumn(#\"Expanded Custom1\", \"expression\", {\"Column\"}, {\"Column\"}),",
+                "    #\"Expanded Column\" = Table.ExpandRecordColumn(#\"Expanded expression\", \"Column\", {\"Expression\", \"Property\"}, {\"Expression\", \"Property\"}),",
+                "    #\"Expanded Expression\" = Table.ExpandRecordColumn(#\"Expanded Column\", \"Expression\", {\"SourceRef\"}, {\"SourceRef\"}),",
+                "    #\"Expanded SourceRef\" = Table.ExpandRecordColumn(#\"Expanded Expression\", \"SourceRef\", {\"Entity\"}, {\"Entity\"}),",
+                "    #\"Renamed Columns\" = Table.RenameColumns(#\"Expanded SourceRef\",{{\"Entity\", \"Table\"}, {\"Property\", \"Col/Measure\"}, {\"type\", \"Filter Type\"}}),",
+                "    #\"Removed Columns\" = Table.RemoveColumns(#\"Renamed Columns\",{\"filters\"}),",
+                "    #\"Changed Type\" = Table.TransformColumnTypes(#\"Removed Columns\",{{\"name\", type text}, {\"Table\", type text}, {\"Col/Measure\", type text}, {\"Filter Type\", type text}}),",
+                "    #\"Added Custom1\" = Table.AddColumn(#\"Changed Type\", \"Table.Col/Measure\", each [Table] & \".\" & [#\"Col/Measure\"], type text)",
+                "in",
+                "    #\"Added Custom1\""
+              ],
+              "type": "m"
+            }
+          }
+        ]
+      },
+      {
+        "name": "Tables and Fields",
+        "annotations": [
+          {
+            "name": "PBI_QueryRelationships",
+            "value": "{\"columnCount\":3,\"keyColumnNames\":[\"Table\",\"Col/Measure\",\"Table.Col/Measure\"],\"queryRelationships\":[],\"columnIdentities\":[\"Section1/Tables and Fields/Source.{Table,2}\",\"Section1/Tables and Fields/Source.{Col/Measure,3}\",\"Section1/Tables and Fields/Source.{Table.Col/Measure,7}\"],\"ColumnCount\":3,\"KeyColumnNames\":[\"Table\",\"Col/Measure\",\"Table.Col/Measure\"],\"ColumnIdentities\":[\"Section1/Tables and Fields/Source.{Table,2}\",\"Section1/Tables and Fields/Source.{Col/Measure,3}\",\"Section1/Tables and Fields/Source.{Table.Col/Measure,7}\"],\"RelationshipInfo\":[]}"
+          },
+          {
+            "name": "PBI_ResultType",
+            "value": "Exception"
+          }
+        ],
+        "columns": [
+          {
+            "name": "Col/Measure",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "9e7d22bf-c4f6-494e-933a-995b537dfb60",
+            "sourceColumn": "Col/Measure",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Table",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "dataType": "string",
+            "lineageTag": "e1f73293-845e-42c2-8fd0-396e1ffd716f",
+            "sourceColumn": "Table",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "Table.Col/Measure",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ],
+            "changedProperties": [
+              {
+                "property": "IsHidden"
+              }
+            ],
+            "dataType": "string",
+            "isHidden": true,
+            "lineageTag": "d270a771-b423-4967-803c-4ee0a1d45924",
+            "sourceColumn": "Table.Col/Measure",
+            "summarizeBy": "none"
+          }
+        ],
+        "lineageTag": "01d1b64e-9814-41d5-95de-701afafcbbdd",
+        "partitions": [
+          {
+            "name": "Tables and Fields-58af6b2b-808c-4927-9df3-cb797393f990",
+            "mode": "import",
+            "source": {
+              "expression": [
+                "let",
+                "    Source = Table.Combine({#\"Page Visuals Data Elements\", #\"Report Filters\", #\"Page Filters\"}),",
+                "    #\"Removed Other Columns\" = Table.SelectColumns(Source,{\"Table\", \"Col/Measure\", \"Table.Col/Measure\"}),",
+                "    #\"Removed Duplicates\" = Table.Distinct(#\"Removed Other Columns\"),",
+                "    #\"Filtered Rows\" = Table.SelectRows(#\"Removed Duplicates\", each ([#\"Table.Col/Measure\"] <> null))",
+                "in",
+                "    #\"Filtered Rows\""
+              ],
+              "type": "m"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
